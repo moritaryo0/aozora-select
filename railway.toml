@@ -2,7 +2,7 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "python manage.py check --verbosity=2 && python manage.py migrate && python manage.py runserver 0.0.0.0:$PORT"
+startCommand = "python manage.py check --verbosity=2 && python manage.py migrate && echo 'Migration completed successfully' && sleep 30"
 healthcheckPath = "/api/health/"
 healthcheckTimeout = 600
 restartPolicyType = "ON_FAILURE"
