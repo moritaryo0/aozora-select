@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン機能テスト</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .token-display {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .info {
+            background-color: #cce7ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 ログイン機能テスト</h1>
+        
+        <div class="info">
+            <strong>📋 利用可能なテストユーザー:</strong><br>
+            • Email: moritaryo0001@gmail.com (Username: moritaryo)<br>
+            • Email: shojisawato@gmail.com (Username: sahojisawato)
+        </div>
+
+        <h2>ログインテスト</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">メールアドレス:</label>
+                <input type="email" id="email" name="email" value="moritaryo0001@gmail.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">パスワード:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">ログイン</button>
+            <button type="button" onclick="testRefreshToken()">トークンリフレッシュ</button>
+            <button type="button" onclick="testAuthStatus()">認証状態確認</button>
+        </form>
+
+        <div id="result"></div>
+        <div id="tokenDisplay"></div>
+
+        <h2>📡 API エンドポイント</h2>
+        <ul>
+            <li><strong>POST</strong> /api/auth/login/ - ログイン</li>
+            <li><strong>POST</strong> /api/auth/refresh/ - トークンリフレッシュ</li>
+            <li><strong>POST</strong> /api/auth/verify/ - トークン検証</li>
+            <li><strong>GET</strong> /api/auth/status/ - 認証状態確認</li>
+            <li><strong>GET</strong> /api/health/ - ヘルスチェック</li>
+        </ul>
+    </div>
+
+    <script>
+        let accessToken = null;
+        let refreshToken = null;
+
+        async function apiCall(url, method = 'GET', data = null, useAuth = false) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+
+            if (useAuth && accessToken) {
+                options.headers['Authorization'] = `Bearer ${accessToken}`;
+            }
+
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(url, options);
+                const result = await response.json();
+                return { status: response.status, data: result };
+            } catch (error) {
+                return { status: 0, data: { error: error.message } };
+            }
+        }
+
+        function displayResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = type;
+            resultDiv.innerHTML = message;
+        }
+
+        function displayTokens(access, refresh) {
+            if (access || refresh) {
+                const tokenDiv = document.getElementById('tokenDisplay');
+                tokenDiv.innerHTML = `
+                    <h3>🎟️ 取得したトークン:</h3>
+                    ${access ? `<strong>Access Token:</strong><br>${access}<br><br>` : ''}
+                    ${refresh ? `<strong>Refresh Token:</strong><br>${refresh}` : ''}
+                `;
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            displayResult('ログイン中...', 'info');
+
+            const result = await apiCall('/api/auth/login/', 'POST', { email, password });
+
+            if (result.status === 200) {
+                accessToken = result.data.access;
+                refreshToken = result.data.refresh;
+                
+                displayResult(`
+                    ✅ ログイン成功！<br>
+                    <strong>ユーザー情報:</strong><br>
+                    Email: ${result.data.email || 'N/A'}<br>
+                    Username: ${result.data.username || 'N/A'}
+                `, 'success');
+                
+                displayTokens(accessToken, refreshToken);
+            } else {
+                displayResult(`❌ ログイン失敗: ${JSON.stringify(result.data)}`, 'error');
+            }
+        });
+
+        async function testRefreshToken() {
+            if (!refreshToken) {
+                displayResult('❌ 先にログインしてください', 'error');
+                return;
+            }
+
+            displayResult('トークンリフレッシュ中...', 'info');
+
+            const result = await apiCall('/api/auth/refresh/', 'POST', { refresh: refreshToken });
+
+            if (result.status === 200) {
+                accessToken = result.data.access;
+                if (result.data.refresh) {
+                    refreshToken = result.data.refresh;
+                }
+                
+                displayResult('✅ トークンリフレッシュ成功！', 'success');
+                displayTokens(accessToken, refreshToken);
+            } else {
+                displayResult(`❌ トークンリフレッシュ失敗: ${JSON.stringify(result.data)}`, 'error');
+            }
+        }
+
+        async function testAuthStatus() {
+            displayResult('認証状態確認中...', 'info');
+
+            const result = await apiCall('/api/auth/status/', 'GET', null, true);
+
+            if (result.status === 200) {
+                displayResult(`
+                    ✅ 認証状態確認成功！<br>
+                    <strong>認証済み:</strong> ${result.data.authenticated ? 'はい' : 'いいえ'}<br>
+                    ${result.data.user ? `<strong>ユーザー:</strong> ${JSON.stringify(result.data.user, null, 2)}` : ''}
+                `, 'success');
+            } else {
+                displayResult(`❌ 認証状態確認失敗: ${JSON.stringify(result.data)}`, 'error');
+            }
+        }
+
+        // ページ読み込み時にヘルスチェック
+        window.addEventListener('load', async function() {
+            const health = await apiCall('/api/health/');
+            console.log('ヘルスチェック:', health);
+        });
+    </script>
+</body>
+</html> 

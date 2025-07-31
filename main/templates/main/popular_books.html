@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - 青空セレクト</title>
+    <link rel="stylesheet" href="/static/main/css/common.css">
+    <style>
+        .popular-books-header {
+            text-align: center;
+            padding: 40px 0;
+            background: var(--bg-gradient);
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .popular-books-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .popular-books-header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .book-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .book-card .ranking {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--primary-color);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .book-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .book-card .author {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        .book-card .description {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-color);
+            margin-bottom: 20px;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .book-card .meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .book-card .access-count {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .book-card .read-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .book-card .read-btn:hover {
+            background: var(--secondary-color);
+            transform: scale(1.05);
+        }
+
+        .book-card .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .book-card .preview-btn {
+            background: #28a745;
+        }
+
+        .book-card .preview-btn:hover {
+            background: #218838;
+        }
+
+        @media (max-width: 480px) {
+            .book-card .buttons {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--primary-color);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-decoration: none;
+            font-size: 1.5rem;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .popular-books-header h1 {
+                font-size: 2rem;
+            }
+
+            .books-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .book-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/" class="logo">📚 青空セレクト</a>
+            <ul class="nav-links">
+                <li><a href="/">ホーム</a></li>
+                <li><a href="/popular-books/">人気作品</a></li>
+                <li><a href="/accounts/my-page/" id="myPageLink" style="display: none;">マイページ</a></li>
+                <li><a href="/accounts/register-page/" id="loginLink">ログイン</a></li>
+                <li><a href="/admin/">管理</a></li>
+            </ul>
+            <div class="hamburger" onclick="toggleMobileMenu()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="popular-books-header">
+            <h1>青空文庫 人気作品</h1>
+            <p>日本の名作を無料で読もう</p>
+        </div>
+
+        <div class="container">
+            <div class="books-grid">
+                {% for book in books %}
+                <div class="book-card">
+                    <div class="ranking">{{ book.ranking }}</div>
+                    <h2>{{ book.title }}</h2>
+                    <div class="author">{{ book.author }}</div>
+                    <div class="description">{{ book.description|default:"この作品の説明はまだありません。" }}</div>
+                    <div class="meta">
+                        <span class="access-count">📖 {{ book.access_count|floatformat:0 }}回読まれました</span>
+                        <div class="buttons">
+                            <a href="{% url 'book_preview' book.book_id %}" class="read-btn preview-btn">📖 プレビュー</a>
+                            <a href="{{ book.card_url }}" target="_blank" class="read-btn">青空文庫で読む</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+
+    <a href="#" class="back-to-top" id="backToTop">↑</a>
+
+    <script src="/static/main/js/common.js"></script>
+    <script>
+        // スクロールで「トップに戻る」ボタンを表示
+        window.addEventListener('scroll', () => {
+            const backToTop = document.getElementById('backToTop');
+            if (window.pageYOffset > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        // スムーズスクロール
+        document.getElementById('backToTop').addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // ログイン状態の確認と更新
+        async function checkAuthStatus() {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                try {
+                    const response = await fetch('/api/auth/status/', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        updateUIForLoggedInUser(data.user);
+                    }
+                } catch (error) {
+                    console.error('認証チェックエラー:', error);
+                }
+            }
+        }
+
+        function updateUIForLoggedInUser(user) {
+            const loginLink = document.getElementById('loginLink');
+            const myPageLink = document.getElementById('myPageLink');
+            
+            if (loginLink) {
+                loginLink.textContent = 'ログアウト';
+                loginLink.href = '#';
+                loginLink.onclick = (e) => {
+                    e.preventDefault();
+                    logout();
+                };
+            }
+            
+            if (myPageLink) {
+                myPageLink.style.display = 'block';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            window.location.href = '/';
+        }
+
+        // ページ読み込み時に認証状態をチェック
+        checkAuthStatus();
+    </script>
+</body>
+</html> 

@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マイページ - 青空セレクト</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-color: #1d9bf0;
+            --background-color: #000;
+            --surface-color: #16181c;
+            --text-primary: #e7e9ea;
+            --text-secondary: #71767b;
+            --border-color: #2f3336;
+            --hover-color: #1a1d23;
+            --accent-blue: #1d9bf0;
+            --accent-red: #f4212e;
+            --accent-green: #00ba7c;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.4;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        /* 左サイドバー */
+        .sidebar {
+            width: 260px;
+            padding: 16px;
+            border-right: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 32px;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 4px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 9999px;
+            font-size: 20px;
+            font-weight: 400;
+            transition: background-color 0.2s;
+        }
+
+        .nav-link:hover {
+            background-color: var(--hover-color);
+        }
+
+        .nav-link.active {
+            font-weight: 700;
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 20px;
+            font-size: 24px;
+        }
+
+        .user-menu {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+        }
+
+        .user-menu-button {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 12px;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .user-menu-button:hover {
+            background-color: var(--hover-color);
+        }
+
+        .user-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-weight: bold;
+        }
+
+        /* メインコンテンツ */
+        .main-content {
+            flex: 1;
+            border-right: 1px solid var(--border-color);
+            max-width: 600px;
+        }
+
+        .main-header {
+            position: sticky;
+            top: 0;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px;
+            z-index: 100;
+        }
+
+        .main-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .main-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* プロフィールヘッダー */
+        .profile-header {
+            position: relative;
+        }
+
+        .profile-banner {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #1d9bf0, #8b5cf6);
+            position: relative;
+        }
+
+        .profile-info {
+            padding: 12px 16px 16px;
+            position: relative;
+        }
+
+        .profile-avatar {
+            width: 134px;
+            height: 134px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            border: 4px solid var(--background-color);
+            position: absolute;
+            top: -67px;
+            left: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .profile-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 9999px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background-color: var(--text-primary);
+            color: var(--background-color);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1a8cd8;
+        }
+
+        .profile-details {
+            margin-top: 75px;
+        }
+
+        .profile-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .profile-username {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .profile-bio {
+            font-size: 15px;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .profile-meta {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 12px;
+        }
+
+        .profile-meta-item {
+            display: flex;
+            align-items: center;
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .profile-meta-icon {
+            margin-right: 4px;
+            font-size: 14px;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .profile-stat {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 15px;
+        }
+
+        .profile-stat:hover {
+            text-decoration: underline;
+        }
+
+        .stat-number {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+        }
+
+        /* タブナビゲーション */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 16px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        .tab:hover {
+            background-color: var(--hover-color);
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            color: var(--text-primary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background-color: var(--accent-blue);
+            border-radius: 2px;
+        }
+
+        /* フォーム */
+        .form-container {
+            padding: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            font-size: 17px;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* 右サイドバー */
+        .right-sidebar {
+            width: 350px;
+            padding: 16px;
+        }
+
+        .widget {
+            background-color: var(--surface-color);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .widget-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .widget-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .widget-content {
+            padding: 16px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 16px;
+            background-color: var(--hover-color);
+            border-radius: 8px;
+        }
+
+        .stat-card-number {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--accent-blue);
+            margin-bottom: 4px;
+        }
+
+        .stat-card-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* アラート */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 15px;
+        }
+
+        .alert-success {
+            background-color: rgba(0, 186, 124, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(0, 186, 124, 0.2);
+        }
+
+        .alert-error {
+            background-color: rgba(244, 33, 46, 0.1);
+            color: var(--accent-red);
+            border: 1px solid rgba(244, 33, 46, 0.2);
+        }
+
+        /* レスポンシブ */
+        @media (max-width: 1024px) {
+            .right-sidebar {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 8px;
+            }
+
+            .nav-menu {
+                display: flex;
+                overflow-x: auto;
+                gap: 8px;
+            }
+
+            .nav-item {
+                margin-bottom: 0;
+                flex-shrink: 0;
+            }
+
+            .nav-link {
+                padding: 8px 16px;
+                font-size: 15px;
+                white-space: nowrap;
+            }
+
+            .nav-icon {
+                margin-right: 8px;
+            }
+
+            .user-menu {
+                position: static;
+                margin-top: 16px;
+            }
+
+            .main-content {
+                max-width: none;
+                border-right: none;
+            }
+
+            .profile-banner {
+                height: 150px;
+            }
+
+            .profile-avatar {
+                width: 88px;
+                height: 88px;
+                top: -44px;
+                font-size: 32px;
+            }
+
+            .profile-details {
+                margin-top: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左サイドバー -->
+        <nav class="sidebar">
+            <a href="/" class="logo">
+                📚 青空セレクト
+            </a>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/" class="nav-link">
+                        <span class="nav-icon">🏠</span>
+                        ホーム
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <span class="nav-icon">🔍</span>
+                        探索
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <span class="nav-icon">❤️</span>
+                        お気に入り
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link active">
+                        <span class="nav-icon">👤</span>
+                        プロフィール
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/test/" class="nav-link">
+                        <span class="nav-icon">🔧</span>
+                        開発者ツール
+                    </a>
+                </li>
+            </ul>
+
+            <div class="user-menu">
+                <button class="user-menu-button" onclick="logout()">
+                    <div class="user-avatar-small" id="sidebarAvatar">U</div>
+                    <div style="flex: 1; text-align: left;">
+                        <div style="font-weight: 700; font-size: 15px;" id="sidebarUsername">ユーザー名</div>
+                        <div style="font-size: 13px; color: var(--text-secondary);">ログアウト</div>
+                    </div>
+                </button>
+            </div>
+        </nav>
+
+        <!-- メインコンテンツ -->
+        <main class="main-content">
+            <div class="main-header">
+                <h1 class="main-title" id="mainTitle">プロフィール</h1>
+                <div class="main-subtitle" id="mainSubtitle">プロフィールとアカウント設定</div>
+            </div>
+
+            <!-- プロフィールヘッダー -->
+            <div class="profile-header">
+                <div class="profile-banner"></div>
+                <div class="profile-info">
+                    <div class="profile-avatar" id="profileAvatar">👤</div>
+                    
+                    <div class="profile-actions">
+                        <button class="btn btn-primary" onclick="document.getElementById('profileForm').scrollIntoView()">
+                            プロフィール編集
+                        </button>
+                    </div>
+
+                    <div class="profile-details">
+                        <h2 class="profile-name" id="profileName">ユーザー名</h2>
+                        <div class="profile-username" id="profileUsername">@username</div>
+                        <div class="profile-bio" id="profileBio">まだ自己紹介が設定されていません</div>
+                        
+                        <div class="profile-meta">
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-icon">📅</span>
+                                <span id="joinDate">2024年に参加</span>
+                            </div>
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-icon">❤️</span>
+                                <span id="favoriteGenre">ジャンル未設定</span>
+                            </div>
+                        </div>
+
+                        <div class="profile-stats">
+                            <a href="#" class="profile-stat">
+                                <span class="stat-number">0</span>
+                                <span class="stat-label"> 読んだ作品</span>
+                            </a>
+                            <a href="#" class="profile-stat">
+                                <span class="stat-number">0</span>
+                                <span class="stat-label"> お気に入り</span>
+                            </a>
+                            <a href="#" class="profile-stat">
+                                <span class="stat-number">0</span>
+                                <span class="stat-label"> 読書時間</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- タブナビゲーション -->
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('profile')">プロフィール</button>
+                <button class="tab" onclick="showTab('activity')">アクティビティ</button>
+                <button class="tab" onclick="showTab('settings')">設定</button>
+            </div>
+
+            <!-- プロフィール編集フォーム -->
+            <div class="tab-content" id="profileTab">
+                <div class="form-container">
+                    <div id="alerts"></div>
+                    
+                    <form id="profileForm">
+                        <div class="form-group">
+                            <label for="email" class="form-label">メールアドレス</label>
+                            <input type="email" id="email" name="email" class="form-input" placeholder="example@email.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="first_name" class="form-label">名前</label>
+                            <input type="text" id="first_name" name="first_name" class="form-input" placeholder="名前">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="last_name" class="form-label">苗字</label>
+                            <input type="text" id="last_name" name="last_name" class="form-input" placeholder="苗字">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="bio" class="form-label">自己紹介</label>
+                            <textarea id="bio" name="bio" class="form-textarea" placeholder="あなたの読書への思いや好きな作家について教えてください..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="favorite_genre" class="form-label">好きなジャンル</label>
+                            <select id="favorite_genre" name="favorite_genre" class="form-select">
+                                <option value="">選択してください</option>
+                                <option value="純文学">純文学</option>
+                                <option value="SF・ファンタジー">SF・ファンタジー</option>
+                                <option value="ミステリー">ミステリー</option>
+                                <option value="恋愛小説">恋愛小説</option>
+                                <option value="歴史小説">歴史小説</option>
+                                <option value="エッセイ">エッセイ</option>
+                                <option value="詩">詩</option>
+                                <option value="その他">その他</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="reading_time_preference" class="form-label">読書時間の好み</label>
+                            <select id="reading_time_preference" name="reading_time_preference" class="form-select">
+                                <option value="">選択してください</option>
+                                <option value="朝">朝（6:00-12:00）</option>
+                                <option value="昼">昼（12:00-18:00）</option>
+                                <option value="夜">夜（18:00-24:00）</option>
+                                <option value="深夜">深夜（24:00-6:00）</option>
+                                <option value="いつでも">いつでも</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px; padding: 12px;">
+                            プロフィールを更新
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- アクティビティタブ -->
+            <div class="tab-content" id="activityTab" style="display: none;">
+                <div class="form-container">
+                    <h3 style="color: var(--text-primary); margin-bottom: 16px;">最近のアクティビティ</h3>
+                    <p style="color: var(--text-secondary);">まだアクティビティがありません。本を読み始めるとここに履歴が表示されます。</p>
+                </div>
+            </div>
+
+            <!-- 設定タブ -->
+            <div class="tab-content" id="settingsTab" style="display: none;">
+                <div class="form-container">
+                    <h3 style="color: var(--text-primary); margin-bottom: 16px;">アカウント設定</h3>
+                    <div class="form-group">
+                        <button class="btn" onclick="logout()" style="background-color: var(--accent-red); border-color: var(--accent-red); color: white;">
+                            ログアウト
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 右サイドバー -->
+        <aside class="right-sidebar">
+            <div class="widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">読書統計</h3>
+                </div>
+                <div class="widget-content">
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-number">0</div>
+                            <div class="stat-card-label">今月読んだ本</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-number">0</div>
+                            <div class="stat-card-label">読書時間</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-number">0</div>
+                            <div class="stat-card-label">お気に入り</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-number">0</div>
+                            <div class="stat-card-label">コメント</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">おすすめ作品</h3>
+                </div>
+                <div class="widget-content">
+                    <p style="color: var(--text-secondary); font-size: 15px;">
+                        プロフィールを設定すると、あなたに合った作品をおすすめします。
+                    </p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        let accessToken = localStorage.getItem('access_token');
+        let refreshToken = localStorage.getItem('refresh_token');
+        
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!accessToken) {
+                window.location.href = '/accounts/register-page/';
+                return;
+            }
+            loadUserProfile();
+        });
+
+        // APIコール関数
+        async function apiCall(url, method = 'GET', data = null, useAuth = true) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+
+            if (useAuth && accessToken) {
+                options.headers['Authorization'] = `Bearer ${accessToken}`;
+            }
+
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(url, options);
+                
+                if (response.status === 401 && useAuth) {
+                    // トークンが無効な場合、リフレッシュを試行
+                    const refreshed = await refreshAccessToken();
+                    if (refreshed) {
+                        options.headers['Authorization'] = `Bearer ${accessToken}`;
+                        return await fetch(url, options);
+                    } else {
+                        window.location.href = '/accounts/register-page/';
+                        return null;
+                    }
+                }
+                
+                return response;
+            } catch (error) {
+                console.error('API Error:', error);
+                return null;
+            }
+        }
+
+        // トークンリフレッシュ
+        async function refreshAccessToken() {
+            if (!refreshToken) return false;
+            
+            try {
+                const response = await fetch('/api/auth/refresh/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh: refreshToken })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    accessToken = data.access;
+                    localStorage.setItem('access_token', accessToken);
+                    if (data.refresh) {
+                        refreshToken = data.refresh;
+                        localStorage.setItem('refresh_token', refreshToken);
+                    }
+                    return true;
+                }
+            } catch (error) {
+                console.error('Token refresh error:', error);
+            }
+            return false;
+        }
+
+        // ユーザープロフィール読み込み
+        async function loadUserProfile() {
+            const response = await apiCall('/api/auth/profile/');
+            if (response && response.ok) {
+                const user = await response.json();
+                displayUserProfile(user);
+            }
+        }
+
+        // ユーザープロフィール表示
+        function displayUserProfile(user) {
+            const initial = user.username.charAt(0).toUpperCase();
+            
+            // プロフィール情報を更新
+            document.getElementById('profileName').textContent = user.first_name && user.last_name 
+                ? `${user.first_name} ${user.last_name}` 
+                : user.username;
+            document.getElementById('profileUsername').textContent = `@${user.username}`;
+            document.getElementById('profileAvatar').textContent = initial;
+            document.getElementById('sidebarAvatar').textContent = initial;
+            document.getElementById('sidebarUsername').textContent = user.username;
+            
+            // 自己紹介
+            if (user.bio) {
+                document.getElementById('profileBio').textContent = user.bio;
+            }
+            
+            // 参加日を表示
+            const joinDate = new Date(user.date_joined);
+            document.getElementById('joinDate').textContent = `${joinDate.getFullYear()}年に参加`;
+            
+            // 好きなジャンル
+            if (user.favorite_genre) {
+                document.getElementById('favoriteGenre').textContent = user.favorite_genre;
+            }
+            
+            // フォームに値をセット
+            document.getElementById('email').value = user.email || '';
+            document.getElementById('first_name').value = user.first_name || '';
+            document.getElementById('last_name').value = user.last_name || '';
+            document.getElementById('bio').value = user.bio || '';
+            document.getElementById('favorite_genre').value = user.favorite_genre || '';
+            document.getElementById('reading_time_preference').value = user.reading_time_preference || '';
+        }
+
+        // タブ切り替え
+        function showTab(tabName) {
+            // すべてのタブを非表示
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            // すべてのタブボタンを非アクティブ
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 選択されたタブを表示
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+            
+            // 選択されたタブボタンをアクティブ
+            event.target.classList.add('active');
+        }
+
+        // プロフィール更新
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                email: document.getElementById('email').value,
+                first_name: document.getElementById('first_name').value,
+                last_name: document.getElementById('last_name').value,
+                bio: document.getElementById('bio').value,
+                favorite_genre: document.getElementById('favorite_genre').value,
+                reading_time_preference: document.getElementById('reading_time_preference').value,
+            };
+            
+            const response = await apiCall('/api/auth/profile/', 'PATCH', formData);
+            
+            if (response && response.ok) {
+                showAlert('プロフィールを更新しました！', 'success');
+                loadUserProfile(); // 再読み込み
+            } else {
+                showAlert('更新に失敗しました。もう一度お試しください。', 'error');
+            }
+        });
+
+        // アラート表示
+        function showAlert(message, type) {
+            const alertsDiv = document.getElementById('alerts');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            alertsDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            
+            setTimeout(() => {
+                alertsDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        // ログアウト
+        async function logout() {
+            if (confirm('ログアウトしますか？')) {
+                const response = await apiCall('/api/auth/logout/', 'POST', { refresh: refreshToken });
+                
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                window.location.href = '/accounts/register-page/';
+            }
+        }
+    </script>
+</body>
+</html> 

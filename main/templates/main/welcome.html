@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>青空セレクト（ベータ版）</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        :root {
+            /* Material Design 3 Color System - Light Mode */
+            --md-primary: #6750a4;
+            --md-on-primary: #ffffff;
+            --md-primary-container: #eaddff;
+            --md-on-primary-container: #21005d;
+            
+            --md-secondary: #625b71;
+            --md-on-secondary: #ffffff;
+            --md-secondary-container: #e8def8;
+            --md-on-secondary-container: #1d192b;
+            
+            --md-surface: #fffbfe;
+            --md-on-surface: #1c1b1f;
+            --md-surface-variant: #f4eff4;
+            --md-on-surface-variant: #49454f;
+            
+            --md-outline: #79747e;
+            --md-outline-variant: #cab6cf;
+            
+            --md-error: #ba1a1a;
+            --md-on-error: #ffffff;
+            
+            /* Elevation */
+            --md-elevation-1: 0px 1px 3px rgba(0, 0, 0, 0.12), 0px 1px 2px rgba(0, 0, 0, 0.24);
+            --md-elevation-2: 0px 3px 6px rgba(0, 0, 0, 0.16), 0px 3px 6px rgba(0, 0, 0, 0.23);
+            --md-elevation-3: 0px 6px 12px rgba(0, 0, 0, 0.15), 0px 4px 6px rgba(0, 0, 0, 0.10);
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            --md-primary: #d0bcff;
+            --md-on-primary: #381e72;
+            --md-primary-container: #4f378b;
+            --md-on-primary-container: #eaddff;
+            
+            --md-secondary: #ccc2dc;
+            --md-on-secondary: #332d41;
+            --md-secondary-container: #4a4458;
+            --md-on-secondary-container: #e8def8;
+            
+            --md-surface: #141218;
+            --md-on-surface: #e6e0e9;
+            --md-surface-variant: #49454f;
+            --md-on-surface-variant: #cab6cf;
+            
+            --md-outline: #938f99;
+            --md-outline-variant: #49454f;
+            
+            --md-error: #ffb4ab;
+            --md-on-error: #690005;
+            
+            /* Dark Mode Elevation */
+            --md-elevation-1: 0px 1px 3px rgba(0, 0, 0, 0.30), 0px 1px 2px rgba(0, 0, 0, 0.50);
+            --md-elevation-2: 0px 3px 6px rgba(0, 0, 0, 0.40), 0px 3px 6px rgba(0, 0, 0, 0.60);
+            --md-elevation-3: 0px 6px 12px rgba(0, 0, 0, 0.50), 0px 4px 6px rgba(0, 0, 0, 0.30);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            line-height: 1.6;
+            color: var(--md-on-surface);
+            background: var(--md-surface);
+            font-weight: 400;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        
+        /* Header */
+        header {
+            background: var(--md-surface);
+            border-bottom: 1px solid var(--md-outline-variant);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            min-height: 64px;
+        }
+        
+        .logo {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--md-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            list-style: none;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: var(--md-on-surface-variant);
+            font-weight: 500;
+            padding: 10px 16px;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+        
+        .nav-links a:hover {
+            background: var(--md-secondary-container);
+            color: var(--md-on-secondary-container);
+        }
+
+        /* Dark Mode Toggle */
+        .theme-toggle {
+            background: var(--md-surface-variant);
+            color: var(--md-on-surface-variant);
+            border: 1px solid var(--md-outline-variant);
+            border-radius: 20px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--md-secondary-container);
+            color: var(--md-on-secondary-container);
+        }
+        
+        /* Hero Section */
+        .hero {
+            padding: 120px 0 64px;
+            text-align: center;
+            background: var(--md-surface);
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 300;
+            color: var(--md-on-surface);
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+        
+        .hero .subtitle {
+            font-size: 1.25rem;
+            color: var(--md-on-surface-variant);
+            margin-bottom: 8px;
+            font-weight: 400;
+        }
+        
+        .hero .description {
+            font-size: 1rem;
+            color: var(--md-on-surface-variant);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+        
+        .beta-badge {
+            display: inline-block;
+            background: var(--md-secondary-container);
+            color: var(--md-on-secondary-container);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Weather & Recommendation Section */
+        .weather-recommendation-section {
+            padding: 64px 0;
+            background: var(--md-primary-container);
+        }
+        
+        .weather-recommendation-card {
+            background: var(--md-surface);
+            border-radius: 24px;
+            box-shadow: var(--md-elevation-2);
+            padding: 32px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .section-header h2 {
+            font-size: 1.75rem;
+            font-weight: 500;
+            color: var(--md-on-surface);
+            margin-bottom: 8px;
+        }
+        
+        /* Weather Compact Display */
+        .weather-compact {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 24px;
+            align-items: center;
+            background: var(--md-surface-variant);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+        }
+        
+        .weather-icon {
+            font-size: 2.5rem;
+        }
+        
+        .weather-main-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .weather-location {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--md-on-surface);
+        }
+        
+        .weather-temp {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--md-primary);
+        }
+        
+        .weather-desc {
+            font-size: 14px;
+            color: var(--md-on-surface-variant);
+        }
+        
+        .weather-details-mini {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            text-align: right;
+            font-size: 12px;
+        }
+        
+        .weather-detail-mini {
+            color: var(--md-on-surface-variant);
+        }
+        
+        .weather-detail-mini .value {
+            font-weight: 600;
+            color: var(--md-on-surface);
+        }
+        
+        /* Recommendation within weather section */
+        .recommendation-embedded {
+            border-top: 1px solid var(--md-outline-variant);
+            padding-top: 24px;
+        }
+        
+        .recommendation-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .recommendation-header h3 {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--md-on-surface);
+            margin-bottom: 8px;
+        }
+        
+        .recommendation-header p {
+            color: var(--md-on-surface-variant);
+            font-size: 14px;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+            border: none;
+            padding: 14px 32px;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--md-elevation-1);
+        }
+        
+        .btn-primary:hover {
+            box-shadow: var(--md-elevation-2);
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary:disabled {
+            background: var(--md-outline-variant);
+            color: var(--md-on-surface-variant);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: var(--md-secondary-container);
+            color: var(--md-on-secondary-container);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--md-on-secondary-container);
+            color: var(--md-secondary-container);
+        }
+        
+        /* Radio buttons styled as Material chips */
+        .chip-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .chip {
+            position: relative;
+        }
+        
+        .chip input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+        
+        .chip label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--md-surface-variant);
+            color: var(--md-on-surface-variant);
+            padding: 12px 20px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid var(--md-outline-variant);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .chip input[type="radio"]:checked + label {
+            background: var(--md-secondary-container);
+            color: var(--md-on-secondary-container);
+            border-color: var(--md-secondary);
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--md-surface-variant);
+            padding: 32px 0;
+            text-align: center;
+            border-top: 1px solid var(--md-outline-variant);
+        }
+        
+        .footer p {
+            color: var(--md-on-surface-variant);
+            font-size: 14px;
+        }
+        
+        /* Status indicator */
+        .status-indicator {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: var(--md-elevation-2);
+            z-index: 1000;
+        }
+        
+        /* Loading and result styles */
+        .result-card {
+            background: var(--md-primary-container);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--md-outline-variant);
+            border-radius: 50%;
+            border-top-color: var(--md-primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 16px;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .weather-compact {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 16px;
+            }
+            
+            .weather-details-mini {
+                grid-template-columns: repeat(4, 1fr);
+                text-align: center;
+            }
+            
+            .nav-links a:not(.theme-toggle) {
+                display: none;
+            }
+            
+            .chip-group {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/" class="logo">📚 青空セレクト</a>
+            <ul class="nav-links">
+                <li><a href="/test/">開発者ツール</a></li>
+                <li><a href="/accounts/register-page/" id="loginLink">ログイン</a></li>
+                <li><a href="/admin/">管理</a></li>
+                <li><button class="theme-toggle" id="themeToggle">
+                    <span id="themeIcon">🌙</span>
+                    <span>ダークモード</span>
+                </button></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="beta-badge">🚀 BETA VERSION</div>
+                <h1>青空セレクト</h1>
+                <p class="subtitle">あなたの今に寄り添う短編を、青空文庫から</p>
+                <p class="description">位置情報と天気から、その瞬間にぴったりの短編小説をお届けします</p>
+            </div>
+        </section>
+
+        <!-- 天気情報セクション -->
+        <section class="weather-recommendation-section">
+            <div class="container">
+                <div id="weatherContainer" class="weather-recommendation-card">
+                    <div id="weatherLoading" style="display: none;">
+                        <h3>📍 現在地の天気を取得中...</h3>
+                        <p>位置情報を許可すると、あなたの環境に合った作品をおすすめできます</p>
+                    </div>
+                    
+                    <div id="weatherContent" style="display: none;">
+                        <div class="section-header">
+                            <h2>🌤️ 今日の天気</h2>
+                        </div>
+                        <div class="weather-compact">
+                            <div class="weather-icon" id="weatherEmoji">🌤️</div>
+                            <div class="weather-main-info">
+                                <div class="weather-location" id="weatherLocation">現在地</div>
+                                <div class="weather-temp" id="weatherTemp">--°C</div>
+                                <div class="weather-desc" id="weatherDesc">--</div>
+                            </div>
+                            <div class="weather-details-mini">
+                                <div class="weather-detail-mini">
+                                    <div class="label">体感温度</div>
+                                    <div class="value" id="weatherFeelsLike">--°C</div>
+                                </div>
+                                <div class="weather-detail-mini">
+                                    <div class="label">湿度</div>
+                                    <div class="value" id="weatherHumidity">--%</div>
+                                </div>
+                                <div class="weather-detail-mini">
+                                    <div class="label">風速</div>
+                                    <div class="value" id="weatherWind">-- m/s</div>
+                                </div>
+                                <div class="weather-detail-mini">
+                                    <div class="label">雲量</div>
+                                    <div class="value" id="weatherClouds">--%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="recommendation-embedded">
+                            <div class="recommendation-header">
+                                <h3>🎯 今日のおすすめ</h3>
+                                <p>天気と時間を考慮して、今この瞬間に読みたくなる青空文庫の短編をAIがセレクトします</p>
+                            </div>
+                            
+                            <!-- 推薦設定 -->
+                            <div id="recommendationSettings">
+                                <div class="chip-group">
+                                    <div class="chip">
+                                        <input type="radio" name="recommendType" value="simple" checked id="simpleRadio">
+                                        <label for="simpleRadio">⚡ シンプル版</label>
+                                    </div>
+                                    <div class="chip">
+                                        <input type="radio" name="recommendType" value="ai" id="aiRadio">
+                                        <label for="aiRadio">🧠 AI版</label>
+                                    </div>
+                                </div>
+
+                                <div style="text-align: center; margin-top: 24px;">
+                                    <button class="btn-primary" id="getRecommendationBtn" onclick="getBookRecommendation()">
+                                        🎯 今すぐ作品を推薦してもらう
+                                    </button>
+                                    <div style="margin-top: 16px; font-size: 14px; color: var(--md-on-surface-variant);">
+                                        <span id="locationStatus">📍 位置情報を取得して、あなたの環境に最適な作品をお選びします</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 推薦結果表示エリア -->
+                            <div id="recommendationResults" style="display: none;">
+                                <!-- ローディング -->
+                                <div id="recommendationLoading" class="result-card" style="
+                                    text-align: center; 
+                                    padding: 40px; 
+                                    display: none;
+                                ">
+                                    <div class="loading-spinner" style="margin-bottom: 16px;"></div>
+                                    <h3 style="margin-bottom: 10px; color: var(--md-on-surface);">作品を選書中...</h3>
+                                    <p style="color: var(--md-on-surface-variant);">天気と時間を考慮して最適な作品を探しています</p>
+                                </div>
+
+                                <!-- 推薦結果 -->
+                                <div id="recommendationContent" style="display: none;">
+                                    <!-- シンプル版結果 -->
+                                    <div id="simpleRecommendationResult" style="display: none;">
+                                        <div class="result-card">
+                                            <div style="text-align: center; margin-bottom: 25px;">
+                                                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">📚 おすすめジャンル</h3>
+                                                <p id="recommendedMood" style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 15px;"></p>
+                                                <p id="weatherMessage" style="opacity: 0.8; font-style: italic;"></p>
+                                            </div>
+                                            
+                                            <div style="text-align: center;">
+                                                <h4 style="margin-bottom: 15px;">✨ おすすめ作家</h4>
+                                                <div id="suggestedAuthors" style="
+                                                    display: flex; 
+                                                    gap: 15px; 
+                                                    justify-content: center; 
+                                                    flex-wrap: wrap;
+                                                "></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- AI版結果 -->
+                                    <div id="aiRecommendationResult" style="display: none;">
+                                        <div class="result-card">
+                                            <div style="text-align: center; margin-bottom: 20px;">
+                                                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">🤖 AI推薦作品</h3>
+                                            </div>
+                                            <div id="aiRecommendationText" style="
+                                                font-size: 1.05rem; 
+                                                line-height: 1.8; 
+                                                white-space: pre-line;
+                                                background: rgba(255,255,255,0.05);
+                                                padding: 25px;
+                                                border-radius: 15px;
+                                                border-left: 4px solid rgba(255,255,255,0.3);
+                                            "></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 再推薦ボタン -->
+                                    <div style="text-align: center; margin-top: 25px;">
+                                        <button class="btn-secondary" onclick="getBookRecommendation()">
+                                            🔄 別の作品を推薦してもらう
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- エラー表示 -->
+                                <div id="recommendationError" style="display: none;">
+                                    <div class="result-card">
+                                        <div style="
+                                            background: rgba(255,107,107,0.2); 
+                                            border: 2px solid rgba(255,107,107,0.4);
+                                            border-radius: 15px; 
+                                            padding: 25px; 
+                                            text-align: center;
+                                        ">
+                                            <div style="font-size: 2rem; margin-bottom: 15px;">😔</div>
+                                            <h3 style="margin-bottom: 10px;">推薦取得エラー</h3>
+                                            <p id="recommendationErrorMessage" style="opacity: 0.9; margin-bottom: 15px;"></p>
+                                            <button class="btn-secondary" onclick="getBookRecommendation()">
+                                                🔄 再試行
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="weatherError" style="display: none;">
+                        <div class="result-card">
+                            <h3>🌤️ 天気情報</h3>
+                            <p>位置情報が取得できませんが、素敵な読書時間をお過ごしください</p>
+                            {% if weather_data %}
+                            <div style="margin-top: 20px;">
+                                <div style="font-size: 2rem;">{{ weather_emoji }}</div>
+                                <div style="font-size: 1.5rem; margin: 10px 0;">{{ weather_data.city_name }} {{ weather_data.temperature }}°C</div>
+                                <div>{{ weather_data.weather_description }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 青空セレクト - Powered by Django & 青空文庫</p>
+        </div>
+    </footer>
+
+    <div class="status-indicator" id="apiStatus">
+        🔌 API接続確認中...
+    </div>
+
+    <script>
+        // API ヘルスチェック
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch('/api/health/');
+                const data = await response.json();
+                
+                const statusEl = document.getElementById('apiStatus');
+                if (data.status === 'ok') {
+                    statusEl.innerHTML = '✅ API 正常稼働中';
+                    statusEl.style.background = '#6750a4';
+                } else {
+                    statusEl.innerHTML = '⚠️ API 接続不安定';
+                    statusEl.style.background = '#ed8936';
+                }
+            } catch (error) {
+                const statusEl = document.getElementById('apiStatus');
+                statusEl.innerHTML = '❌ API 接続エラー';
+                statusEl.style.background = '#e53e3e';
+            }
+        }
+
+        // 天気情報の取得と表示
+        async function loadWeatherData() {
+            console.log('🌤️ 天気情報の読み込みを開始...');
+            
+            const weatherLoading = document.getElementById('weatherLoading');
+            const weatherContent = document.getElementById('weatherContent');
+            const weatherError = document.getElementById('weatherError');
+            
+            // ローディング表示
+            weatherLoading.style.display = 'block';
+            
+            // 位置情報の取得を試行
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    // 成功時
+                    async (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        console.log(`📍 位置情報取得成功: 緯度 ${lat}, 経度 ${lon}`);
+                        
+                        try {
+                            const weatherUrl = `/api/weather/?lat=${lat}&lon=${lon}`;
+                            const response = await fetch(weatherUrl);
+                            const data = await response.json();
+                            
+                            if (data.success && data.weather) {
+                                updateWeatherUI(data.weather);
+                                weatherLoading.style.display = 'none';
+                                weatherContent.style.display = 'block';
+                            } else {
+                                showWeatherError();
+                            }
+                        } catch (error) {
+                            console.error('❌ 天気データ取得エラー:', error);
+                            showWeatherError();
+                        }
+                    },
+                    // エラー時
+                    (error) => {
+                        console.error('❌ 位置情報取得エラー:', error.code, error.message);
+                        showWeatherError();
+                    },
+                    // オプション
+                    {
+                        timeout: 10000,
+                        enableHighAccuracy: false
+                    }
+                );
+            } else {
+                console.error('❌ このブラウザは位置情報をサポートしていません');
+                showWeatherError();
+            }
+        }
+        
+        function updateWeatherUI(weather) {
+            // 現在の日付を取得
+            const now = new Date();
+            
+            // 天気情報をUIに反映
+            document.getElementById('weatherEmoji').textContent = weather.emoji || '🌤️';
+            document.getElementById('weatherLocation').textContent = weather.city_name || '現在地';
+            document.getElementById('weatherTemp').textContent = `${weather.temperature}°C`;
+            document.getElementById('weatherDesc').textContent = weather.weather_description || '--';
+            document.getElementById('weatherFeelsLike').textContent = `${weather.feels_like}°C`;
+            document.getElementById('weatherHumidity').textContent = `${weather.humidity}%`;
+            document.getElementById('weatherWind').textContent = `${weather.wind_speed} m/s`;
+            document.getElementById('weatherClouds').textContent = `${weather.clouds}%`;
+            
+            // 日付と四季を表示（これらの要素は削除されているのでコメントアウト）
+            // document.getElementById('weatherDate').textContent = formatDate(now);
+            // document.getElementById('weatherSeason').textContent = getSeason(now);
+            
+            // 推薦メッセージを更新（この要素は削除されているのでコメントアウト）
+            // if (weather.recommendation) {
+            //     document.getElementById('weatherRecommendation').textContent = weather.recommendation;
+            // }
+        }
+        
+        function showWeatherError() {
+            const weatherLoading = document.getElementById('weatherLoading');
+            const weatherContent = document.getElementById('weatherContent');
+            const weatherError = document.getElementById('weatherError');
+            
+            weatherLoading.style.display = 'none';
+            weatherContent.style.display = 'none';
+            weatherError.style.display = 'block';
+        }
+
+
+
+        // ページ読み込み時に実行
+        window.addEventListener('load', () => {
+            // テーマを最初に設定
+            setupThemeToggle();
+            
+            // その他の初期化処理
+            checkAPIStatus();
+            loadWeatherData();
+            setInterval(checkAPIStatus, 30000);
+        });
+
+        // 作品推薦機能
+        let currentLocation = null;
+
+        // 作品推薦を取得する関数
+        async function getBookRecommendation() {
+            console.log('📚 作品推薦機能開始');
+            
+            const recommendType = document.querySelector('input[name="recommendType"]:checked').value;
+            const isAI = recommendType === 'ai';
+            
+            // UI状態をリセット
+            hideAllRecommendationSections();
+            document.getElementById('recommendationResults').style.display = 'block';
+            document.getElementById('recommendationLoading').style.display = 'block';
+            
+            // ボタンを無効化
+            const btn = document.getElementById('getRecommendationBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '🔍 推薦中...';
+            
+            try {
+                // 位置情報を取得（既存のものがあれば使用）
+                if (!currentLocation) {
+                    currentLocation = await getCurrentLocation();
+                }
+                
+                // 推薦APIを呼び出し
+                const url = `/api/recommend/?lat=${currentLocation.lat}&lon=${currentLocation.lon}&use_ai=${isAI}`;
+                console.log(`📡 推薦API呼び出し: ${url}`);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                console.log('📊 推薦API結果:', data);
+                
+                // ローディングを隠す
+                document.getElementById('recommendationLoading').style.display = 'none';
+                
+                if (data.success) {
+                    showRecommendationResult(data, isAI);
+                } else {
+                    showRecommendationError(data.message || '推薦の取得に失敗しました');
+                }
+                
+            } catch (error) {
+                console.error('❌ 推薦取得エラー:', error);
+                document.getElementById('recommendationLoading').style.display = 'none';
+                showRecommendationError('ネットワークエラーが発生しました。しばらく時間をおいて再試行してください。');
+            } finally {
+                // ボタンを復元
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // 現在位置を取得
+        function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const location = {
+                                lat: position.coords.latitude,
+                                lon: position.coords.longitude
+                            };
+                            console.log('📍 位置情報取得成功:', location);
+                            updateLocationStatus(`📍 現在地: 緯度 ${location.lat.toFixed(4)}, 経度 ${location.lon.toFixed(4)}`);
+                            resolve(location);
+                        },
+                        (error) => {
+                            console.warn('⚠️ 位置情報取得失敗、東京駅を使用:', error);
+                            const defaultLocation = { lat: 35.681236, lon: 139.767125 };
+                            updateLocationStatus('📍 デフォルト位置（東京駅）を使用中');
+                            resolve(defaultLocation);
+                        },
+                        {
+                            timeout: 10000,
+                            enableHighAccuracy: false
+                        }
+                    );
+                } else {
+                    console.warn('⚠️ 位置情報非対応、東京駅を使用');
+                    const defaultLocation = { lat: 35.681236, lon: 139.767125 };
+                    updateLocationStatus('📍 デフォルト位置（東京駅）を使用中');
+                    resolve(defaultLocation);
+                }
+            });
+        }
+
+        // 位置情報ステータスを更新
+        function updateLocationStatus(message) {
+            document.getElementById('locationStatus').textContent = message;
+        }
+
+        // 推薦結果を表示
+        function showRecommendationResult(data, isAI) {
+            document.getElementById('recommendationContent').style.display = 'block';
+            
+            if (isAI) {
+                // AI版の結果表示
+                document.getElementById('aiRecommendationResult').style.display = 'block';
+                document.getElementById('simpleRecommendationResult').style.display = 'none';
+                document.getElementById('aiRecommendationText').textContent = data.recommendation;
+            } else {
+                // シンプル版の結果表示
+                document.getElementById('simpleRecommendationResult').style.display = 'block';
+                document.getElementById('aiRecommendationResult').style.display = 'none';
+                
+                document.getElementById('recommendedMood').textContent = data.recommended_mood;
+                document.getElementById('weatherMessage').textContent = data.weather_message;
+                
+                // 作家タグを表示
+                const authorsContainer = document.getElementById('suggestedAuthors');
+                authorsContainer.innerHTML = data.suggested_authors.map(author => `
+                    <span style="
+                        background: #e8def8;
+                        color: #1d192b;
+                        padding: 8px 16px;
+                        border-radius: 16px;
+                        font-size: 14px;
+                        border: 1px solid #cab6cf;
+                    ">${author}</span>
+                `).join('');
+            }
+        }
+
+        // 推薦エラーを表示
+        function showRecommendationError(message) {
+            document.getElementById('recommendationError').style.display = 'block';
+            document.getElementById('recommendationErrorMessage').textContent = message;
+        }
+
+        // 推薦セクションをすべて隠す
+        function hideAllRecommendationSections() {
+            document.getElementById('recommendationLoading').style.display = 'none';
+            document.getElementById('recommendationContent').style.display = 'none';
+            document.getElementById('recommendationError').style.display = 'none';
+            document.getElementById('simpleRecommendationResult').style.display = 'none';
+            document.getElementById('aiRecommendationResult').style.display = 'none';
+        }
+
+        // ダークモード切り替え機能
+        function setupThemeToggle() {
+            const themeToggle = document.getElementById('themeToggle');
+            const currentIcon = document.getElementById('themeIcon');
+            const htmlElement = document.documentElement;
+
+            // 保存されたテーマを読み込み、なければダークモードをデフォルトに
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            htmlElement.setAttribute('data-theme', savedTheme);
+
+            function updateIcon() {
+                if (htmlElement.getAttribute('data-theme') === 'dark') {
+                    currentIcon.textContent = '☀️';
+                } else {
+                    currentIcon.textContent = '🌙';
+                }
+            }
+
+            updateIcon(); // ページ読み込み時にアイコンを更新
+
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = htmlElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                htmlElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateIcon();
+            });
+        }
+    </script>
+    
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .recommendation-section .text-center {
+            text-align: center;
+        }
+        
+        /* モバイル対応 */
+        @media (max-width: 768px) {
+            .recommendation-section {
+                padding: 40px 0 !important;
+            }
+            
+            .recommendation-section h2 {
+                font-size: 1.8rem !important;
+            }
+            
+            .recommendation-section .recommendation-settings {
+                padding: 20px !important;
+            }
+            
+            .recommendation-section label {
+                flex-direction: column !important;
+                text-align: center !important;
+                padding: 15px !important;
+            }
+            
+            .recommendation-section label small {
+                margin-left: 0 !important;
+                margin-top: 5px !important;
+            }
+            
+            #getRecommendationBtn {
+                padding: 12px 25px !important;
+                font-size: 1rem !important;
+            }
+        }
+    </style>
+</body>
+</html> 

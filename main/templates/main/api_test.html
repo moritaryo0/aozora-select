@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API機能テスト</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .api-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+        .method-get { border-left: 4px solid #28a745; }
+        .method-post { border-left: 4px solid #007bff; }
+        .method-put { border-left: 4px solid #ffc107; }
+        .method-delete { border-left: 4px solid #dc3545; }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        button:hover { background-color: #0056b3; }
+        button.get { background-color: #28a745; }
+        button.post { background-color: #007bff; }
+        button.put { background-color: #ffc107; color: #000; }
+        button.delete { background-color: #dc3545; }
+        
+        .response {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea { height: 100px; resize: vertical; }
+        
+        h1, h2, h3 { color: #333; }
+        .status { font-weight: bold; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Django API 機能テスト</h1>
+        
+        <div class="api-section method-get">
+            <h3>🔍 GET /api/health/ - ヘルスチェック</h3>
+            <p>APIの基本的な動作確認</p>
+            <button class="get" onclick="testAPI('/api/health/', 'GET', null, 'health-response')">テスト実行</button>
+            <div id="health-response" class="response"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 認証 API テスト</h3>
+            <button onclick="testLogin()" class="test-button">ログインテスト</button>
+            <button onclick="testAuthStatus()" class="test-button">認証状態確認</button>
+            <pre id="auth-response" class="response"></pre>
+        </div>
+
+        <div class="test-section">
+            <h3>🌤️ 天気 API テスト</h3>
+            <div style="margin-bottom: 15px;">
+                <label>緯度: <input type="number" id="test-lat" value="35.6762" step="0.0001" placeholder="例: 35.6762"></label>
+                <label>経度: <input type="number" id="test-lon" value="139.6503" step="0.0001" placeholder="例: 139.6503"></label>
+                <button onclick="testWeatherAPI()" class="test-button">天気情報取得</button>
+                <button onclick="getLocationAndTestWeather()" class="test-button">現在地から取得</button>
+            </div>
+            <pre id="weather-response" class="response"></pre>
+        </div>
+
+        <div class="test-section">
+            <h3>📚 作品 API テスト</h3>
+            <p>任意のエンドポイントをテスト</p>
+            <input type="text" id="custom-url" placeholder="URL (例: /api/health/)" value="/api/health/">
+            <select id="custom-method">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+            </select>
+            <textarea id="custom-body" placeholder="リクエストボディ (JSON形式)"></textarea>
+            <label>
+                <input type="checkbox" id="custom-auth"> 認証ヘッダーを含める
+            </label><br>
+            <button onclick="testCustomAPI()">カスタムテスト実行</button>
+            <div id="custom-response" class="response"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 作品推薦 API テスト</h3>
+            <p>天気と時間に基づく青空文庫作品推薦機能</p>
+            <div style="margin-bottom: 15px;">
+                <label>緯度: <input type="number" id="recommend-lat" value="35.6762" step="0.0001" placeholder="例: 35.6762"></label>
+                <label>経度: <input type="number" id="recommend-lon" value="139.6503" step="0.0001" placeholder="例: 139.6503"></label>
+                <br><br>
+                <label>
+                    <input type="radio" name="recommend-type" value="simple" checked> シンプル版推薦 (APIキー不要・高速)
+                </label><br>
+                <label>
+                    <input type="radio" name="recommend-type" value="ai"> LangChain AI版推薦 (Google APIキー必要・高度)
+                </label><br><br>
+                <button onclick="testRecommendAPI()" class="test-button">作品推薦取得</button>
+                <button onclick="getLocationAndTestRecommend()" class="test-button">現在地から推薦</button>
+            </div>
+            <pre id="recommend-response" class="response"></pre>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 人気作品 API テスト</h3>
+            <p>青空文庫の人気作品一覧を取得</p>
+            <button onclick="testPopularBooksAPI()" class="test-button">人気作品取得</button>
+            <pre id="popular-books-response" class="response"></pre>
+        </div>
+    </div>
+
+    <script>
+        let accessToken = null;
+        let refreshToken = null;
+
+        async function testAPI(url, method = 'GET', data = null, responseId, useAuth = false) {
+            const responseElement = document.getElementById(responseId);
+            responseElement.textContent = '実行中...';
+            responseElement.className = 'response';
+
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+
+            if (useAuth && accessToken) {
+                options.headers['Authorization'] = `Bearer ${accessToken}`;
+            }
+
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch(url, options);
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+                
+                let result;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    result = await response.text();
+                }
+
+                const statusClass = response.ok ? 'success' : 'error';
+                responseElement.className = `response ${statusClass}`;
+                responseElement.textContent = `Status: ${response.status} ${response.statusText} (${responseTime}ms)\n\n${JSON.stringify(result, null, 2)}`;
+
+                return { status: response.status, data: result, ok: response.ok };
+            } catch (error) {
+                responseElement.className = 'response error';
+                responseElement.textContent = `Error: ${error.message}`;
+                return { status: 0, data: { error: error.message }, ok: false };
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            const result = await testAPI('/api/auth/login/', 'POST', { email, password }, 'login-response');
+
+            if (result.ok && result.data.access) {
+                accessToken = result.data.access;
+                refreshToken = result.data.refresh;
+                updateTokenInfo();
+            }
+        }
+
+        async function testRefresh() {
+            if (!refreshToken) {
+                const responseElement = document.getElementById('refresh-response');
+                responseElement.className = 'response error';
+                responseElement.textContent = 'エラー: リフレッシュトークンがありません。先にログインしてください。';
+                return;
+            }
+
+            const result = await testAPI('/api/auth/refresh/', 'POST', { refresh: refreshToken }, 'refresh-response');
+
+            if (result.ok && result.data.access) {
+                accessToken = result.data.access;
+                if (result.data.refresh) {
+                    refreshToken = result.data.refresh;
+                }
+                updateTokenInfo();
+            }
+        }
+
+        async function testVerify() {
+            if (!accessToken) {
+                const responseElement = document.getElementById('verify-response');
+                responseElement.className = 'response error';
+                responseElement.textContent = 'エラー: アクセストークンがありません。先にログインしてください。';
+                return;
+            }
+
+            await testAPI('/api/auth/verify/', 'POST', { token: accessToken }, 'verify-response');
+        }
+
+        async function testAuthStatus() {
+            await testAPI('/api/auth/status/', 'GET', null, 'status-response', true);
+        }
+
+        async function testCustomAPI() {
+            const url = document.getElementById('custom-url').value;
+            const method = document.getElementById('custom-method').value;
+            const bodyText = document.getElementById('custom-body').value;
+            const useAuth = document.getElementById('custom-auth').checked;
+
+            let body = null;
+            if (bodyText.trim()) {
+                try {
+                    body = JSON.parse(bodyText);
+                } catch (e) {
+                    const responseElement = document.getElementById('custom-response');
+                    responseElement.className = 'response error';
+                    responseElement.textContent = `JSONパースエラー: ${e.message}`;
+                    return;
+                }
+            }
+
+            await testAPI(url, method, body, 'custom-response', useAuth);
+        }
+
+        function updateTokenInfo() {
+            const tokenInfoElement = document.getElementById('token-info');
+            if (accessToken || refreshToken) {
+                tokenInfoElement.textContent = `Access Token: ${accessToken ? accessToken.substring(0, 50) + '...' : 'なし'}\n\nRefresh Token: ${refreshToken ? refreshToken.substring(0, 50) + '...' : 'なし'}`;
+            } else {
+                tokenInfoElement.textContent = 'ログインしてトークンを取得してください';
+            }
+        }
+
+        // 天気APIテスト関数
+        async function testWeatherAPI() {
+            const lat = document.getElementById('test-lat').value;
+            const lon = document.getElementById('test-lon').value;
+            
+            if (!lat || !lon) {
+                document.getElementById('weather-response').textContent = 'エラー: 緯度と経度を入力してください';
+                document.getElementById('weather-response').className = 'response error';
+                return;
+            }
+            
+            const url = `/api/weather/?lat=${lat}&lon=${lon}`;
+            await testAPI(url, 'GET', null, 'weather-response');
+        }
+        
+        async function getLocationAndTestWeather() {
+            const responseElement = document.getElementById('weather-response');
+            responseElement.textContent = '位置情報を取得中...';
+            responseElement.className = 'response';
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        
+                        document.getElementById('test-lat').value = lat;
+                        document.getElementById('test-lon').value = lon;
+                        
+                        responseElement.textContent = `位置情報取得成功: 緯度=${lat}, 経度=${lon}\n天気情報を取得中...`;
+                        
+                        const url = `/api/weather/?lat=${lat}&lon=${lon}`;
+                        await testAPI(url, 'GET', null, 'weather-response');
+                    },
+                    (error) => {
+                        responseElement.textContent = `位置情報取得エラー: ${error.message}`;
+                        responseElement.className = 'response error';
+                    }
+                );
+            } else {
+                responseElement.textContent = 'このブラウザは位置情報をサポートしていません';
+                responseElement.className = 'response error';
+            }
+        }
+
+                 // 作品推薦APIテスト関数
+         async function testRecommendAPI() {
+             const lat = document.getElementById('recommend-lat').value;
+             const lon = document.getElementById('recommend-lon').value;
+             const recommendType = document.querySelector('input[name="recommend-type"]:checked').value;
+
+             if (!lat || !lon) {
+                 document.getElementById('recommend-response').textContent = 'エラー: 緯度と経度を入力してください';
+                 document.getElementById('recommend-response').className = 'response error';
+                 return;
+             }
+
+             const useAI = recommendType === 'ai' ? 'true' : 'false';
+             const url = `/api/recommend/?lat=${lat}&lon=${lon}&use_ai=${useAI}`;
+             await testAPI(url, 'GET', null, 'recommend-response');
+         }
+
+        async function getLocationAndTestRecommend() {
+            const responseElement = document.getElementById('recommend-response');
+            responseElement.textContent = '位置情報を取得中...';
+            responseElement.className = 'response';
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        
+                        document.getElementById('recommend-lat').value = lat;
+                        document.getElementById('recommend-lon').value = lon;
+                        
+                        responseElement.textContent = `位置情報取得成功: 緯度=${lat}, 経度=${lon}\n作品推薦を取得中...`;
+                        
+                                                 const url = `/api/recommend/?lat=${lat}&lon=${lon}&use_ai=false`; // シンプル版をデフォルトに
+                        await testAPI(url, 'GET', null, 'recommend-response');
+                    },
+                    (error) => {
+                        responseElement.textContent = `位置情報取得エラー: ${error.message}`;
+                        responseElement.className = 'response error';
+                    }
+                );
+            } else {
+                responseElement.textContent = 'このブラウザは位置情報をサポートしていません';
+                responseElement.className = 'response error';
+            }
+        }
+
+        // 人気作品APIテスト関数
+        async function testPopularBooksAPI() {
+            const url = `/api/popular-books/`;
+            await testAPI(url, 'GET', null, 'popular-books-response');
+        }
+
+        // ページ読み込み時にヘルスチェック実行
+        window.addEventListener('load', function() {
+            testAPI('/api/health/', 'GET', null, 'health-response');
+        });
+    </script>
+</body>
+</html> 

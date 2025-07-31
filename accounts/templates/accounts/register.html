@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン・新規登録 - 青空セレクト</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Hiragino Sans', 'ヒラギノ角ゴシック', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .auth-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .auth-header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .auth-header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .auth-tabs {
+            display: flex;
+            background: #f8f9fa;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 20px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #6c757d;
+        }
+        
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .auth-content {
+            padding: 40px 30px;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group small {
+            color: #6c757d;
+            font-size: 14px;
+            margin-top: 5px;
+            display: block;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            color: #6c757d;
+            position: relative;
+        }
+        
+        .divider:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e2e8f0;
+        }
+        
+        .divider span {
+            background: white;
+            padding: 0 15px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .back-to-home {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .back-to-home:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+            
+            .auth-container {
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                max-width: 100%;
+            }
+            
+            .auth-header {
+                padding: 25px 20px;
+            }
+            
+            .auth-header h1 {
+                font-size: 1.8rem;
+                margin-bottom: 8px;
+            }
+            
+            .auth-header p {
+                font-size: 1rem;
+            }
+            
+            .auth-content {
+                padding: 25px 20px;
+                flex: 1;
+            }
+            
+            .back-to-home {
+                position: fixed;
+                top: 15px;
+                left: 15px;
+                z-index: 1000;
+                padding: 10px 14px;
+                font-size: 14px;
+                border-radius: 8px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+            
+            .form-group {
+                margin-bottom: 18px;
+            }
+            
+            .form-group label {
+                font-size: 14px;
+                margin-bottom: 6px;
+            }
+            
+            .form-group input {
+                padding: 14px 16px;
+                font-size: 16px; /* iOSズーム防止 */
+                border-radius: 8px;
+                min-height: 48px; /* タッチフレンドリー */
+            }
+            
+            .form-group small {
+                font-size: 12px;
+                margin-top: 4px;
+            }
+            
+            .btn {
+                padding: 14px;
+                font-size: 16px;
+                min-height: 48px;
+                border-radius: 8px;
+            }
+            
+            .tab-button {
+                padding: 16px;
+                font-size: 15px;
+            }
+            
+            .alert {
+                margin: 15px 0;
+                padding: 12px;
+                font-size: 14px;
+                border-radius: 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .auth-header {
+                padding: 20px 15px;
+            }
+            
+            .auth-header h1 {
+                font-size: 1.6rem;
+            }
+            
+            .auth-content {
+                padding: 20px 15px;
+            }
+            
+            .tab-button {
+                font-size: 14px;
+                padding: 14px;
+            }
+            
+            .back-to-home {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin: 15px;
+                display: inline-block;
+                position: fixed;
+                top: 10px;
+                left: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-to-home">← ホームに戻る</a>
+    
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1>📚 青空セレクト</h1>
+            <p>あなたの読書ライフが始まります</p>
+        </div>
+        
+        <div class="auth-tabs">
+            <button class="tab-button active" onclick="switchTab('login')">ログイン</button>
+            <button class="tab-button" onclick="switchTab('register')">新規登録</button>
+        </div>
+        
+        <div class="auth-content">
+            <div id="alerts"></div>
+            
+            <!-- ログインタブ -->
+            <div id="login-tab" class="tab-content active">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="login-username">ユーザー名</label>
+                        <input type="text" id="login-username" name="username" required
+                               placeholder="ユーザー名を入力">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="login-password">パスワード</label>
+                        <input type="password" id="login-password" name="password" required
+                               placeholder="パスワードを入力">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">ログイン</button>
+                </form>
+                
+                <div class="divider">
+                    <span>または</span>
+                </div>
+                
+                <button type="button" class="btn btn-secondary" onclick="switchTab('register')">
+                    新規アカウントを作成
+                </button>
+            </div>
+            
+            <!-- 新規登録タブ -->
+            <div id="register-tab" class="tab-content">
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="reg-username">ユーザー名 *</label>
+                        <input type="text" id="reg-username" name="username" required
+                               placeholder="半角英数字でユーザー名を入力">
+                        <small>ログイン時に使用します（変更不可）</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reg-password">パスワード *</label>
+                        <input type="password" id="reg-password" name="password" required
+                               placeholder="8文字以上のパスワード">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reg-password-confirm">パスワード確認 *</label>
+                        <input type="password" id="reg-password-confirm" name="password_confirm" required
+                               placeholder="もう一度パスワードを入力">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reg-first-name">名前</label>
+                            <input type="text" id="reg-first-name" name="first_name"
+                                   placeholder="名前">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="reg-last-name">苗字</label>
+                            <input type="text" id="reg-last-name" name="last_name"
+                                   placeholder="苗字">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reg-email">メールアドレス</label>
+                        <input type="email" id="reg-email" name="email"
+                               placeholder="example@email.com（任意）">
+                        <small>パスワードリセット等で使用（任意）</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reg-favorite-genre">好きなジャンル</label>
+                        <select id="reg-favorite-genre" name="favorite_genre">
+                            <option value="">選択してください</option>
+                            <option value="純文学">純文学</option>
+                            <option value="SF・ファンタジー">SF・ファンタジー</option>
+                            <option value="ミステリー">ミステリー</option>
+                            <option value="恋愛小説">恋愛小説</option>
+                            <option value="歴史小説">歴史小説</option>
+                            <option value="エッセイ">エッセイ</option>
+                            <option value="詩">詩</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reg-reading-time">読書時間の好み</label>
+                        <select id="reg-reading-time" name="reading_time_preference">
+                            <option value="">選択してください</option>
+                            <option value="朝">朝（6:00-12:00）</option>
+                            <option value="昼">昼（12:00-18:00）</option>
+                            <option value="夜">夜（18:00-24:00）</option>
+                            <option value="深夜">深夜（24:00-6:00）</option>
+                            <option value="いつでも">いつでも</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reg-bio">自己紹介</label>
+                        <textarea id="reg-bio" name="bio" rows="3"
+                                  placeholder="読書への思いや好きな作家について...（任意）"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">アカウント作成</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // タブ切り替え
+        function switchTab(tabName) {
+            // タブボタンの状態更新
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // タブコンテンツの表示切り替え
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // アラートをクリア
+            document.getElementById('alerts').innerHTML = '';
+        }
+
+        // APIコール関数
+        async function apiCall(url, method = 'GET', data = null) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(url, options);
+                return response;
+            } catch (error) {
+                console.error('API Error:', error);
+                return null;
+            }
+        }
+
+        // アラート表示
+        function showAlert(message, type) {
+            const alertsDiv = document.getElementById('alerts');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            alertsDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            
+            setTimeout(() => {
+                alertsDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        // ローディング状態の制御
+        function setLoading(button, isLoading) {
+            if (isLoading) {
+                button.classList.add('loading');
+                button.disabled = true;
+                button.style.position = 'relative';
+            } else {
+                button.classList.remove('loading');
+                button.disabled = false;
+            }
+        }
+
+        // ログインフォーム処理
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            setLoading(submitButton, true);
+            
+            const formData = {
+                username: document.getElementById('login-username').value,
+                password: document.getElementById('login-password').value,
+            };
+            
+            const response = await apiCall('/api/auth/login/', 'POST', formData);
+            
+            if (response && response.ok) {
+                const data = await response.json();
+                
+                // トークンを保存
+                localStorage.setItem('access_token', data.access);
+                localStorage.setItem('refresh_token', data.refresh);
+                
+                showAlert('ログインしました！マイページに移動します...', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = '/accounts/my-page/';
+                }, 1500);
+            } else {
+                const errorData = await response.json();
+                showAlert(errorData.detail || 'ログインに失敗しました', 'error');
+            }
+            
+            setLoading(submitButton, false);
+        });
+
+        // 新規登録フォーム処理
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            setLoading(submitButton, true);
+            
+            const formData = {
+                username: document.getElementById('reg-username').value,
+                password: document.getElementById('reg-password').value,
+                password_confirm: document.getElementById('reg-password-confirm').value,
+                first_name: document.getElementById('reg-first-name').value,
+                last_name: document.getElementById('reg-last-name').value,
+                email: document.getElementById('reg-email').value,
+                favorite_genre: document.getElementById('reg-favorite-genre').value,
+                reading_time_preference: document.getElementById('reg-reading-time').value,
+                bio: document.getElementById('reg-bio').value,
+            };
+            
+            // パスワード確認
+            if (formData.password !== formData.password_confirm) {
+                showAlert('パスワードが一致しません', 'error');
+                setLoading(submitButton, false);
+                return;
+            }
+            
+            const response = await apiCall('/api/auth/register/', 'POST', formData);
+            
+            if (response && response.ok) {
+                const data = await response.json();
+                
+                // 登録成功時は自動でトークンが発行される
+                localStorage.setItem('access_token', data.tokens.access);
+                localStorage.setItem('refresh_token', data.tokens.refresh);
+                
+                showAlert('アカウントが作成されました！マイページに移動します...', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = '/accounts/my-page/';
+                }, 1500);
+            } else {
+                const errorData = await response.json();
+                let errorMessage = '登録に失敗しました';
+                
+                if (errorData.username) {
+                    errorMessage = 'ユーザー名: ' + errorData.username[0];
+                } else if (errorData.password) {
+                    errorMessage = 'パスワード: ' + errorData.password[0];
+                } else if (errorData.non_field_errors) {
+                    errorMessage = errorData.non_field_errors[0];
+                }
+                
+                showAlert(errorMessage, 'error');
+            }
+            
+            setLoading(submitButton, false);
+        });
+
+        // ページ読み込み時の処理
+        document.addEventListener('DOMContentLoaded', function() {
+            // 既にログインしている場合はマイページにリダイレクト
+            const accessToken = localStorage.getItem('access_token');
+            if (accessToken) {
+                // トークンの有効性を確認
+                fetch('/api/auth/status/', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.href = '/accounts/my-page/';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - 青空セレクト</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Hiragino Sans', 'ヒラギノ角ゴシック', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .back-button {
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            transition: background 0.3s;
+        }
+        
+        .back-button:hover {
+            background: #5a6fd8;
+        }
+        
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .book-info {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .book-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .book-author {
+            font-size: 1.2rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .book-description {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #666;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .text-preview {
+            margin-top: 20px;
+        }
+        
+        .text-preview h2 {
+            font-size: 1.4rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .text-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            font-size: 1.1rem;
+            line-height: 1.9;
+            white-space: pre-wrap;
+            font-family: 'Yu Mincho', 'YuMincho', serif;
+            color: #2c3e50;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #dc3545;
+            margin-top: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #667eea;
+            border-top: 3px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .actions {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .action-button {
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            margin: 0 10px;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        
+        .action-button:hover {
+            background: #5a6fd8;
+        }
+        
+        .action-button.secondary {
+            background: #6c757d;
+        }
+        
+        .action-button.secondary:hover {
+            background: #5a6268;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .book-title {
+                font-size: 1.5rem;
+            }
+            
+            .text-content {
+                padding: 20px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <a href="/" class="logo">青空セレクト</a>
+                <a href="/" class="back-button">← ホームに戻る</a>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            {% if error_message %}
+                <div class="error-message">
+                    <h2>エラーが発生しました</h2>
+                    <p>{{ error_message }}</p>
+                </div>
+            {% else %}
+                <div class="book-info">
+                    <h1 class="book-title">{{ book.title }}</h1>
+                    <div class="book-author">著者: {{ book.author }}</div>
+                    <div class="book-description">{{ book.description }}</div>
+                </div>
+                
+                <div class="text-preview">
+                    <h2>📖 本文プレビュー</h2>
+                    
+                    {% if text_content %}
+                        <div class="text-content">{{ text_content }}</div>
+                        
+                        <div class="actions">
+                            <a href="#" class="action-button" onclick="downloadFullText()">
+                                📥 全文をダウンロード
+                            </a>
+                            <a href="{{ book.card_url }}" target="_blank" class="action-button secondary">
+                                🔗 青空文庫で読む
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="loading">
+                            テキストを読み込み中...
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </main>
+    </div>
+    
+    <script>
+        function downloadFullText() {
+            // 全文ダウンロード機能（今後実装予定）
+            alert('全文ダウンロード機能は今後実装予定です。\n現在は青空文庫の公式サイトをご利用ください。');
+        }
+        
+        // ページ読み込み時のアニメーション
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainContent = document.querySelector('.main-content');
+            mainContent.style.opacity = '0';
+            mainContent.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                mainContent.style.transition = 'opacity 0.6s, transform 0.6s';
+                mainContent.style.opacity = '1';
+                mainContent.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body>
+</html> 

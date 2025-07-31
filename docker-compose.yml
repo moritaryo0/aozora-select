@@ -1,0 +1,15 @@
+services:
+  aozora-short-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8001:8000"
+    volumes:
+      - .:/code  # 開発中はマウントしておくと便利
+    env_file:
+      - .env  # .envファイルから環境変数を読み込み
+    environment:
+      - DJANGO_SETTINGS_MODULE=app.settings
+    working_dir: /code 
