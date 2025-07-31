@@ -233,6 +233,7 @@ def recommend_books_api(request):
     - lat: 緯度 (オプション、デフォルト: 東京駅)
     - lon: 経度 (オプション、デフォルト: 東京駅)
     - use_ai: trueの場合LangChain版、falseの場合シンプル版 (デフォルト: false)
+    - model_type: AI版使用時のGeminiモデル ("flash"または"pro"、デフォルト: "flash")
     """
     print(f"📚 作品推薦API リクエスト受信 - IP: {request.META.get('REMOTE_ADDR')}")
     
@@ -246,9 +247,11 @@ def recommend_books_api(request):
     lat = params.get('lat', 35.681236)  # デフォルト: 東京駅
     lon = params.get('lon', 139.767125)
     use_ai = params.get('use_ai', 'false').lower() == 'true'
+    model_type = params.get('model_type', 'flash')  # デフォルト: flash
     
     print(f"📍 座標: lat={lat}, lon={lon}")
     print(f"🤖 AI使用: {use_ai}")
+    print(f"🎯 モデル: {model_type}")
     
     try:
         lat = float(lat)
@@ -274,7 +277,8 @@ def recommend_books_api(request):
                 lat=lat,
                 lon=lon,
                 google_api_key=google_api_key,
-                openweather_api_key=openweather_api_key
+                openweather_api_key=openweather_api_key,
+                model_type=model_type
             )
             
             if result['success']:
@@ -285,6 +289,7 @@ def recommend_books_api(request):
                     'recommendation': result['recommendation'],
                     'weather_info': result['weather_info'],
                     'location': result['location'],
+                    'model_used': result.get('model_used', model_type),
                     'timestamp': result['timestamp']
                 })
             else:
@@ -315,6 +320,7 @@ def recommend_books_api(request):
                     'suggested_authors': result['suggested_authors'],
                     'weather_message': result['weather_message'],
                     'weather_info': result['weather_info'],
+                    'model_used': 'simple_algorithm',
                     'timestamp': result['timestamp']
                 })
             else:

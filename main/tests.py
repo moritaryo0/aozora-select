@@ -41,7 +41,7 @@ else:
         )
 
         # --- LangChainエージェントの準備 ---
-        llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=google_api_key)
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=google_api_key)
         search = DuckDuckGoSearchRun()
         tools = [search]
         react_prompt = hub.pull("hwchase17/react")

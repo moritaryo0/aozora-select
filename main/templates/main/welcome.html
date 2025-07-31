@@ -553,8 +553,22 @@
                                         <label for="simpleRadio">⚡ シンプル版</label>
                                     </div>
                                     <div class="chip">
-                                        <input type="radio" name="recommendType" value="ai" id="aiRadio">
-                                        <label for="aiRadio">🧠 AI版</label>
+                                        <input type="radio" name="recommendType" value="ai-flash" id="aiFlashRadio">
+                                        <label for="aiFlashRadio">🚀 AI版（軽量）</label>
+                                    </div>
+                                    <div class="chip">
+                                        <input type="radio" name="recommendType" value="ai-pro" id="aiProRadio">
+                                        <label for="aiProRadio">🧠 AI版（高性能）</label>
+                                    </div>
+                                </div>
+                                
+                                <!-- モデル説明 -->
+                                <div id="modelDescription" style="margin-top: 16px; padding: 12px; background: rgba(var(--md-primary-rgb), 0.08); border-radius: 8px; font-size: 14px; text-align: center; color: var(--md-on-surface-variant); display: none;">
+                                    <div id="flashDescription" style="display: none;">
+                                        <strong>Gemini 2.5 Flash:</strong> 高速で効率的な軽量モデル。迅速な推薦をお求めの方に最適です。
+                                    </div>
+                                    <div id="proDescription" style="display: none;">
+                                        <strong>Gemini 2.5 Pro:</strong> より深い分析と洗練された推薦を提供する高性能モデル。あんまり使うとお金がかかるから、そんなに使わないでね。
                                     </div>
                                 </div>
 
@@ -609,6 +623,12 @@
                                         <div class="result-card">
                                             <div style="text-align: center; margin-bottom: 20px;">
                                                 <h3 style="font-size: 1.5rem; margin-bottom: 10px;">🤖 AI推薦作品</h3>
+                                                <div id="aiModelInfo" style="
+                                                    font-size: 0.9rem; 
+                                                    opacity: 0.8; 
+                                                    margin-bottom: 10px;
+                                                    color: var(--md-primary);
+                                                "></div>
                                             </div>
                                             <div id="aiRecommendationText" style="
                                                 font-size: 1.05rem; 
@@ -793,10 +813,44 @@
 
 
 
+        // モデル説明を更新する関数
+        function updateModelDescription() {
+            const recommendType = document.querySelector('input[name="recommendType"]:checked').value;
+            const modelDescription = document.getElementById('modelDescription');
+            const flashDescription = document.getElementById('flashDescription');
+            const proDescription = document.getElementById('proDescription');
+            
+            // すべて非表示にリセット
+            modelDescription.style.display = 'none';
+            flashDescription.style.display = 'none';
+            proDescription.style.display = 'none';
+            
+            if (recommendType === 'ai-flash') {
+                modelDescription.style.display = 'block';
+                flashDescription.style.display = 'block';
+            } else if (recommendType === 'ai-pro') {
+                modelDescription.style.display = 'block';
+                proDescription.style.display = 'block';
+            }
+        }
+        
+        // 推薦タイプ選択のイベントリスナーを設定
+        function setupRecommendationTypeListeners() {
+            const radioButtons = document.querySelectorAll('input[name="recommendType"]');
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', updateModelDescription);
+            });
+            // 初期状態を設定
+            updateModelDescription();
+        }
+
         // ページ読み込み時に実行
         window.addEventListener('load', () => {
             // テーマを最初に設定
             setupThemeToggle();
+            
+            // 推薦タイプのイベントリスナーを設定
+            setupRecommendationTypeListeners();
             
             // その他の初期化処理
             checkAPIStatus();
@@ -812,7 +866,16 @@
             console.log('📚 作品推薦機能開始');
             
             const recommendType = document.querySelector('input[name="recommendType"]:checked').value;
-            const isAI = recommendType === 'ai';
+            const isAI = recommendType.startsWith('ai-');
+            let modelType = 'flash';
+            
+            if (recommendType === 'ai-flash') {
+                modelType = 'flash';
+            } else if (recommendType === 'ai-pro') {
+                modelType = 'pro';
+            }
+            
+            console.log(`🎯 推薦タイプ: ${recommendType}, AI: ${isAI}, モデル: ${modelType}`);
             
             // UI状態をリセット
             hideAllRecommendationSections();
@@ -832,7 +895,7 @@
                 }
                 
                 // 推薦APIを呼び出し
-                const url = `/api/recommend/?lat=${currentLocation.lat}&lon=${currentLocation.lon}&use_ai=${isAI}`;
+                const url = `/api/recommend/?lat=${currentLocation.lat}&lon=${currentLocation.lon}&use_ai=${isAI}&model_type=${modelType}`;
                 console.log(`📡 推薦API呼び出し: ${url}`);
                 
                 const response = await fetch(url);
@@ -908,6 +971,13 @@
                 document.getElementById('aiRecommendationResult').style.display = 'block';
                 document.getElementById('simpleRecommendationResult').style.display = 'none';
                 document.getElementById('aiRecommendationText').textContent = data.recommendation;
+                
+                // モデル情報を表示
+                const modelInfo = document.getElementById('aiModelInfo');
+                const modelUsed = data.model_used || 'gemini-2.5-flash';
+                const modelIcon = modelUsed.includes('pro') ? '🧠' : '🚀';
+                const modelName = modelUsed.includes('pro') ? 'Gemini 2.5 Pro（高性能版）' : 'Gemini 2.5 Flash（軽量版）';
+                modelInfo.textContent = `${modelIcon} ${modelName} による推薦`;
             } else {
                 // シンプル版の結果表示
                 document.getElementById('simpleRecommendationResult').style.display = 'block';

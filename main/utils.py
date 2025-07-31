@@ -411,7 +411,7 @@ def get_mock_weather_data():
         'timezone': 32400  # JST
     }
 
-def recommend_books_by_weather_and_time(lat=35.681236, lon=139.767125, google_api_key=None, openweather_api_key=None):
+def recommend_books_by_weather_and_time(lat=35.681236, lon=139.767125, google_api_key=None, openweather_api_key=None, model_type="flash"):
     """
     天気情報と現在時刻に基づいて青空文庫から短編作品を推薦
     
@@ -420,6 +420,7 @@ def recommend_books_by_weather_and_time(lat=35.681236, lon=139.767125, google_ap
         lon (float): 経度（デフォルト: 東京駅）
         google_api_key (str): Google Generative AI APIキー
         openweather_api_key (str): OpenWeatherMap APIキー
+        model_type (str): 使用するGeminiモデル（"flash"または"pro"、デフォルト: "flash"）
         
     Returns:
         dict: 推薦結果と詳細情報
@@ -454,7 +455,7 @@ def recommend_books_by_weather_and_time(lat=35.681236, lon=139.767125, google_ap
         prompt_template = """
 現在は{year}年の{month}月{day}日の{hour}時です。{city_name}の天気は、{weather_description}、気温は{temperature}度です。
 この気象情報と現在の一般的なニュースや話題を考慮して、今日という日にぴったりのオススメの作品を青空文庫の中から一時間以内でサクッと読めるくらいの短編を検索して選書してください。
-みんなが一度は読んだことがあるほどのメジャーな作品は除いてみてください。
+みんなが一度は読んだことがあるほどのメジャーな作品は除いてみてください。回答は日本語でお願いします。ユーザのプライバシーに配慮して回答には現在地に関する言及は控えてください。
 
 推薦理由も含めて、以下の形式で回答してください：
 - 作品名：
@@ -475,8 +476,16 @@ def recommend_books_by_weather_and_time(lat=35.681236, lon=139.767125, google_ap
         
         print(f"🤖 LangChainエージェント準備中...")
         
+        # Geminiモデルを選択
+        if model_type.lower() == "pro":
+            model_name = "gemini-2.5-pro"
+        else:
+            model_name = "gemini-2.5-flash"
+            
+        print(f"🎯 使用モデル: {model_name}")
+        
         # LangChainエージェントの準備
-        llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=google_api_key)
+        llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=google_api_key)
         search = DuckDuckGoSearchRun()
         tools = [search]
         react_prompt = hub.pull("hwchase17/react")
@@ -496,6 +505,7 @@ def recommend_books_by_weather_and_time(lat=35.681236, lon=139.767125, google_ap
             'recommendation': result['output'],
             'weather_info': weather_info,
             'prompt_used': prompt,
+            'model_used': model_name,
             'timestamp': now.isoformat(),
             'location': {
                 'lat': lat,
