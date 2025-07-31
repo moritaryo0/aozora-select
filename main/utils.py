@@ -479,6 +479,8 @@ def recommend_books_by_weather_and_time(lat=35.681236, lon=139.767125, google_ap
         # Geminiモデルを選択
         if model_type.lower() == "pro":
             model_name = "gemini-2.5-pro"
+        elif model_type.lower() == "flash-lite":
+            model_name = "gemini-2.5-flash-lite"
         else:
             model_name = "gemini-2.5-flash"
             
