@@ -2,7 +2,7 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "echo 'DEBUG: Container started' && echo 'DEBUG: Step 2' && python manage.py migrate && echo 'DEBUG: Migration completed' && python manage.py runserver 0.0.0.0:8000"
+startCommand = "python manage.py runserver 0.0.0.0:8000"
 # healthcheckPath = "/api/health/"  # 完全無効化
 # healthcheckTimeout = 600
 restartPolicyType = "ON_FAILURE"
