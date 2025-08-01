@@ -460,6 +460,8 @@ def recommend_books_by_weather_and_time(lat=35.681236, lon=139.767125, google_ap
 推薦理由も含めて、以下の形式で回答してください：
 - 作品名：
 - 作者名：
+--作品リンク:
+https://www.google.com/search?q=青空文庫+[作品名]
 - 推薦理由：
 - あらすじ：
 """
@@ -492,13 +494,28 @@ def recommend_books_by_weather_and_time(lat=35.681236, lon=139.767125, google_ap
         tools = [search]
         react_prompt = hub.pull("hwchase17/react")
         agent = create_react_agent(llm, tools, react_prompt)
-        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=False)
+        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
         
         print(f"🔍 作品推薦実行中...")
         print(f"📝 生成されたプロンプト: {prompt[:200]}...")
         
         # エージェントの実行
-        result = agent_executor.invoke({"input": prompt})
+        try:
+            result = agent_executor.invoke({"input": prompt})
+        except google.api_core.exceptions.ResourceExhausted as e:
+            print(f"❌ Gemini API レート制限エラー: {e}")
+            return {
+                'success': False,
+                'error': 'Gemini API rate limit exceeded',
+                'recommendation': None,
+                'message': '現在、Gemini APIの利用が集中しているため、一時的に推薦ができません。しばらく時間をおいてから再度お試しください。',
+                'timestamp': datetime.now().isoformat()
+            }
+        except Exception as e:
+            print(f"❌ LangChainエージェント実行エラー: {e}")
+            import traceback
+            print(f"❌ エラー詳細: {traceback.format_exc()}")
+            raise e
         
         print(f"✅ 推薦完了")
         
