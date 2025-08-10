@@ -1,7 +1,9 @@
+import os
 from django.shortcuts import render
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -12,6 +14,8 @@ from .utils import (
     recommend_books_by_weather_and_time, get_simple_weather_recommendation
 )
 from django.views.decorators.http import require_http_methods
+from .rag_service import ask as rag_ask
+from .integrated_recommendation import get_integrated_recommendation
 
 # Create your views here.
 
@@ -177,6 +181,75 @@ def weather_api(request):
             'message': f'座標が無効か、APIエラーが発生しました: {str(e)}'
         }, status=400)
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def rag_answer_api(request):
+    """
+    RAGに質問して回答を返すAPI
+    Body: { "question": "..." }
+    """
+    try:
+        data = request.data if hasattr(request, 'data') else {}
+        question = (data.get('question') or '').strip()
+        if not question:
+            return JsonResponse({
+                'success': False,
+                'error': 'question is required'
+            }, status=400)
+
+        print(f"🔍 RAG質問受信: {question}")
+        answer = rag_ask(question)
+        print(f"✅ RAG回答完了: {len(answer)} 文字")
+        
+        return JsonResponse({
+            'success': True,
+            'question': question,
+            'answer': answer
+        })
+        
+    except RuntimeError as e:
+        if "event loop" in str(e).lower():
+            print(f"❌ イベントループエラー: {e}")
+            return JsonResponse({
+                'success': False,
+                'error': 'Event loop error',
+                'message': 'RAGシステムの初期化中です。しばらく待ってから再試行してください。'
+            }, status=503)
+        else:
+            print(f"❌ RuntimeError: {e}")
+            import traceback
+            print(traceback.format_exc())
+            return JsonResponse({
+                'success': False,
+                'error': 'Runtime error',
+                'message': str(e)
+            }, status=500)
+            
+    except ImportError as e:
+        print(f"❌ インポートエラー (依存関係): {e}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Import error',
+            'message': 'RAGシステムの依存関係が不足しています。faiss-cpuがインストールされているか確認してください。'
+        }, status=500)
+        
+    except FileNotFoundError as e:
+        print(f"❌ ファイル未発見エラー: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': 'File not found',
+            'message': 'RAGベクターストアが見つかりません。VECTOR_STORE_PATHを確認してください。'
+        }, status=500)
+        
+    except Exception as e:
+        print(f"❌ RAG回答エラー: {e}")
+        import traceback
+        print(traceback.format_exc())
+        return JsonResponse({
+            'success': False,
+            'error': 'RAG error',
+            'message': str(e)
+        }, status=500)
 def book_preview(request, book_id):
     """本文プレビューページ"""
     # 初期データから作品を探す
@@ -232,8 +305,8 @@ def recommend_books_api(request):
     Parameters:
     - lat: 緯度 (オプション、デフォルト: 東京駅)
     - lon: 経度 (オプション、デフォルト: 東京駅)
-    - use_ai: trueの場合LangChain版、falseの場合シンプル版 (デフォルト: false)
-    - model_type: AI版使用時のGeminiモデル ("flash"または"pro"、デフォルト: "flash")
+    - use_ai: 現在はLangChain版のみで、他の方法なども実装の余地あり
+    - model_type: AI版使用時のGeminiモデル (ベータ版ではgemini 2.5-flash-liteで固定)
     """
     print(f"📚 作品推薦API リクエスト受信 - IP: {request.META.get('REMOTE_ADDR')}")
     
@@ -261,75 +334,44 @@ def recommend_books_api(request):
         openweather_api_key = getattr(settings, 'OPENWEATHERMAP_API_KEY', None)
         google_api_key = getattr(settings, 'GOOGLE_API_KEY', None)
         
-        if use_ai:
-            # LangChain版推薦を使用
-            print("🧠 LangChain版推薦システムを使用")
-            
-            if not google_api_key or not google_api_key.strip():
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Google API key not configured',
-                    'message': 'AI推薦を使用するにはGoogle APIキーの設定が必要です。シンプル版をご利用ください。',
-                    'fallback_available': True
-                }, status=400)
-            
-            result = recommend_books_by_weather_and_time(
-                lat=lat,
-                lon=lon,
-                google_api_key=google_api_key,
-                openweather_api_key=openweather_api_key,
-                model_type=model_type
-            )
-            
-            if result['success']:
-                print("✅ AI推薦完了")
-                return JsonResponse({
-                    'success': True,
-                    'type': 'ai_recommendation',
-                    'recommendation': result['recommendation'],
-                    'weather_info': result['weather_info'],
-                    'location': result['location'],
-                    'model_used': result.get('model_used', model_type),
-                    'timestamp': result['timestamp']
-                })
-            else:
-                print(f"❌ AI推薦エラー: {result['error']}")
-                return JsonResponse({
-                    'success': False,
-                    'error': result['error'],
-                    'message': 'AI推薦でエラーが発生しました。シンプル版をお試しください。',
-                    'fallback_available': True
-                }, status=500)
+        # LangChain版推薦を使用
+        print("LangChain版推薦システムを使用")
         
+        if not google_api_key or not google_api_key.strip():
+            return JsonResponse({
+                'success': False,
+                'error': 'Google API key not configured',
+                'message': 'AI推薦を使用するにはGoogle APIキーの設定が必要です。シンプル版をご利用ください。',
+                'fallback_available': True
+            }, status=400)
+        
+        result = recommend_books_by_weather_and_time(
+            lat=lat,
+            lon=lon,
+            google_api_key=google_api_key,
+            openweather_api_key=openweather_api_key,
+            model_type=model_type
+        )
+        
+        if result['success']:
+            print("✅ AI推薦完了")
+            return JsonResponse({
+                'success': True,
+                'type': 'ai_recommendation',
+                'recommendation': result['recommendation'],
+                'weather_info': result['weather_info'],
+                'location': result['location'],
+                'model_used': result.get('model_used', model_type),
+                'timestamp': result['timestamp']
+            })
         else:
-            # シンプル版推薦を使用
-            print("📝 シンプル版推薦システムを使用")
-            
-            result = get_simple_weather_recommendation(
-                lat=lat,
-                lon=lon,
-                openweather_api_key=openweather_api_key
-            )
-            
-            if result['success']:
-                print("✅ シンプル推薦完了")
-                return JsonResponse({
-                    'success': True,
-                    'type': 'simple_recommendation',
-                    'recommended_mood': result['recommended_mood'],
-                    'suggested_authors': result['suggested_authors'],
-                    'weather_message': result['weather_message'],
-                    'weather_info': result['weather_info'],
-                    'model_used': 'simple_algorithm',
-                    'timestamp': result['timestamp']
-                })
-            else:
-                print(f"❌ シンプル推薦エラー: {result['error']}")
-                return JsonResponse({
-                    'success': False,
-                    'error': result['error'],
-                    'message': '推薦システムでエラーが発生しました'
-                }, status=500)
+            print(f"❌ AI推薦エラー: {result['error']}")
+            return JsonResponse({
+                'success': False,
+                'error': result['error'],
+                'message': 'AI推薦でエラーが発生しました。シンプル版をお試しください。',
+                'fallback_available': True
+            }, status=500)
     
     except ValueError as e:
         print(f"❌ パラメータエラー: {e}")
@@ -347,4 +389,47 @@ def recommend_books_api(request):
             'success': False,
             'error': 'Unexpected error',
             'message': f'予期しないエラーが発生しました: {str(e)}'
+        }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def integrated_recommendation_api(request):
+    """統合推薦API：天気情報とRAGを組み合わせた推薦"""
+    try:
+        # リクエストパラメータを取得
+        lat = float(request.GET.get('lat', 35.681236))
+        lon = float(request.GET.get('lon', 139.767125))
+        
+        print(f"🌟 統合推薦API呼び出し: lat={lat}, lon={lon}")
+        
+        # OpenWeatherMap APIキーを取得
+        openweather_api_key = os.environ.get('OPENWEATHERMAP_API_KEY')
+        
+        # 統合推薦を実行
+        result = get_integrated_recommendation(
+            lat=lat, 
+            lon=lon, 
+            openweather_api_key=openweather_api_key
+        )
+        
+        if result['success']:
+            return Response(result)
+        else:
+            return Response(result, status=500)
+            
+    except ValueError as e:
+        return Response({
+            'success': False,
+            'error': 'Invalid coordinates',
+            'message': '座標の形式が正しくありません。'
+        }, status=400)
+    except Exception as e:
+        print(f"❌ 統合推薦API error: {e}")
+        import traceback
+        print(f"❌ Error details: {traceback.format_exc()}")
+        return Response({
+            'success': False,
+            'error': 'Internal server error',
+            'message': '統合推薦システムでエラーが発生しました。'
         }, status=500)
