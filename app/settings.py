@@ -201,7 +201,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 OPENWEATHERMAP_API_KEY = os.environ.get('OPENWEATHERMAP_API_KEY', '')
 GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', '')
 
-"""# セキュリティ設定（本番環境用）
+# セキュリティ設定（本番環境用）
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -213,4 +213,3 @@ if not DEBUG:
 # ベクトルストア設定
 VECTOR_STORE_PATH = BASE_DIR / "RAG_test" / "aozora_faiss_index"
 GOOGLE_DRIVE_FILE_ID = os.environ.get('GOOGLE_DRIVE_FILE_ID', None)
-""
