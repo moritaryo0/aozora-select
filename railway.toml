@@ -1,4 +1,4 @@
-"""[build]
+[build]
 builder = "NIXPACKS"
 
 [deploy]
@@ -9,4 +9,4 @@ restartPolicyMaxRetries = 10
 # 永続ストレージの設定
 [[deploy.volumes]]
 source = "aozora-data"
-target = "/code/RAG_test" "" 
+target = "/code/RAG_test" 

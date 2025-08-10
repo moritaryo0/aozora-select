@@ -1,10 +1,6 @@
 import os
 import asyncio
 import threading
-import requests
-import tempfile
-import re
-import zipfile
 from typing import Optional
 
 from django.conf import settings
@@ -16,9 +12,8 @@ os.environ["LANGCHAIN_CALLBACKS_MANAGER"] = "disabled"
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough, RunnableParallel
+from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
-from langchain.retrievers.multi_query import MultiQueryRetriever
 
 
 _rag_lock = threading.Lock()
@@ -26,167 +21,18 @@ _rag_ready = False
 _rag_chain = None
 
 
-def _extract_google_drive_file_id(url: str) -> Optional[str]:
-    """Google DriveのURLからファイルIDを抽出"""
-    patterns = [
-        r"/file/d/([a-zA-Z0-9-_]+)",
-        r"/d/([a-zA-Z0-9-_]+)",
-        r"id=([a-zA-Z0-9-_]+)",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, url)
-        if match:
-            return match.group(1)
-    return None
-
-
-def _download_from_google_drive(file_id: str, local_path: str) -> bool:
-    """Google Driveからファイルをダウンロード（大容量確認トークンに対応）"""
-    try:
-        print(f"📥 Google Driveからファイルをダウンロード中: {file_id}")
-        session = requests.Session()
-
-        def _perform_download(token: Optional[str] = None):
-            params = {"export": "download", "id": file_id}
-            if token:
-                params["confirm"] = token
-            return session.get("https://drive.google.com/uc", params=params, stream=True)
-
-        # 1回目（トークンなし）
-        response = _perform_download()
-        response.raise_for_status()
-
-        # Cookieにdownload_warningがあれば、その値で再リクエスト
-        token = None
-        for k, v in response.cookies.items():
-            if k.startswith("download_warning"):
-                token = v
-                break
-        if token:
-            response = _perform_download(token)
-            response.raise_for_status()
-
-        # HTMLが返ってきていないか簡易チェック
-        content_type = response.headers.get("Content-Type", "")
-        if "text/html" in content_type.lower():
-            print("❌ 取得したコンテンツはHTMLです。共有設定やリンク形式を確認してください。")
-            return False
-
-        os.makedirs(os.path.dirname(local_path), exist_ok=True)
-        with open(local_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=1024 * 1024):
-                if chunk:
-                    f.write(chunk)
-
-        print(f"✅ Google Driveからのダウンロード完了: {local_path}")
-        return True
-    except Exception as e:
-        print(f"❌ Google Driveからのダウンロードに失敗: {e}")
-        return False
-
-
-def _download_vectorstore_from_url(url: str, local_path: str) -> bool:
-    """外部URLからベクターストアをダウンロード"""
-    try:
-        print(f"📥 ベクターストアをダウンロード中: {url}")
-
-        # Google DriveのURLかチェック
-        if "drive.google.com" in url:
-            file_id = _extract_google_drive_file_id(url)
-            if not file_id:
-                print("❌ Google DriveのURLからファイルIDを抽出できませんでした")
-                return False
-            return _download_from_google_drive(file_id, local_path)
-
-        # 通常のHTTPダウンロード
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-
-        content_type = response.headers.get("Content-Type", "")
-        if "text/html" in content_type.lower():
-            print("❌ 取得したコンテンツはHTMLです。URLを直接ダウンロード可能なものにしてください。")
-            return False
-
-        os.makedirs(os.path.dirname(local_path), exist_ok=True)
-        with open(local_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=1024 * 1024):
-                if chunk:
-                    f.write(chunk)
-
-        print(f"✅ ベクターストアのダウンロード完了: {local_path}")
-        return True
-    except Exception as e:
-        print(f"❌ ベクターストアのダウンロードに失敗: {e}")
-        return False
-
-
-"""def _default_vector_store_path() -> str:
+def _default_vector_store_path() -> str:
     # settings.pyからベクターストアのパスを取得
     vector_store_path = getattr(settings, "VECTOR_STORE_PATH", None)
     if not vector_store_path:
         raise ValueError("VECTOR_STORE_PATHがsettings.pyで設定されていません。")
-    return str(vector_store_path)""
-
-
-def _post_extract_fixups(vector_store_path: str):
-    """展開後に想定外の配置だった場合の補正。トップに直接ファイルがある場合など。"""
-    parent_dir = os.path.dirname(vector_store_path)
-    index_f = os.path.join(parent_dir, "index.faiss")
-    index_p = os.path.join(parent_dir, "index.pkl")
-    if not os.path.exists(vector_store_path) and (os.path.exists(index_f) or os.path.exists(index_p)):
-        os.makedirs(vector_store_path, exist_ok=True)
-        if os.path.exists(index_f):
-            os.replace(index_f, os.path.join(vector_store_path, "index.faiss"))
-        if os.path.exists(index_p):
-            os.replace(index_p, os.path.join(vector_store_path, "index.pkl"))
-        print("ℹ️ ベクターストアファイルを規定のディレクトリに移動しました")
-
-
-def _ensure_vectorstore_exists():
-    """ベクターストアが存在しない場合、外部からダウンロード"""
-    vector_store_path = _default_vector_store_path()
-
-    if not os.path.exists(vector_store_path):
-        vectorstore_url = os.getenv("VECTORSTORE_URL")
-        if vectorstore_url:
-            with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp_file:
-                downloaded = _download_vectorstore_from_url(vectorstore_url, tmp_file.name)
-            if not downloaded:
-                print("❌ ベクターストアのダウンロードに失敗しました。URLと共有設定を確認してください。")
-                return
-
-            # ZIP判定
-            if not zipfile.is_zipfile(tmp_file.name):
-                try:
-                    # 先頭数バイトを表示してデバッグに役立てる
-                    with open(tmp_file.name, "rb") as f:
-                        head = f.read(64)
-                    print(f"❌ ダウンロードしたファイルはZIPではありません。先頭バイト: {head[:16]!r}")
-                finally:
-                    os.unlink(tmp_file.name)
-                return
-
-            # 展開
-            try:
-                with zipfile.ZipFile(tmp_file.name, "r") as zip_ref:
-                    zip_ref.extractall(os.path.dirname(vector_store_path))
-                print(f"✅ ベクターストアを展開しました: {vector_store_path}")
-            finally:
-                os.unlink(tmp_file.name)
-
-            # 展開後補正
-            _post_extract_fixups(vector_store_path)
-        else:
-            print("⚠️ VECTORSTORE_URLが設定されていません")
+    return str(vector_store_path)
 
 
 def _build_rag_chain():
     google_api_key = getattr(settings, "GOOGLE_API_KEY", None)
     if not google_api_key:
         raise RuntimeError("GOOGLE_API_KEY が設定されていません")
-
-    # ベクターストアの存在確認とダウンロード
-    _ensure_vectorstore_exists()
 
     vector_store_path = _default_vector_store_path()
 
@@ -396,5 +242,3 @@ def ask(question: str) -> str:
             return _run_with_event_loop(_rag_chain, question)
         else:
             raise
-
-
