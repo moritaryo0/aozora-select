@@ -1,6 +1,8 @@
 import os
 import asyncio
 import threading
+import requests
+import tempfile
 from typing import Optional
 
 from django.conf import settings
@@ -22,6 +24,26 @@ _rag_ready = False
 _rag_chain = None
 
 
+def _download_vectorstore_from_url(url: str, local_path: str) -> bool:
+    """外部URLからベクターストアをダウンロード"""
+    try:
+        print(f"📥 ベクターストアをダウンロード中: {url}")
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        
+        with open(local_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        
+        print(f"✅ ベクターストアのダウンロード完了: {local_path}")
+        return True
+    except Exception as e:
+        print(f"❌ ベクターストアのダウンロードに失敗: {e}")
+        return False
+
+
 def _default_vector_store_path() -> str:
     # RAG_test/aozora_faiss_index をデフォルトに
     base_dir = getattr(settings, "BASE_DIR", os.getcwd())
@@ -31,11 +53,36 @@ def _default_vector_store_path() -> str:
     )
 
 
+def _ensure_vectorstore_exists():
+    """ベクターストアが存在しない場合、外部からダウンロード"""
+    vector_store_path = _default_vector_store_path()
+    
+    if not os.path.exists(vector_store_path):
+        # 外部URLからダウンロードを試行
+        vectorstore_url = os.getenv("VECTORSTORE_URL")
+        if vectorstore_url:
+            # 一時ファイルにダウンロードしてから展開
+            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as tmp_file:
+                if _download_vectorstore_from_url(vectorstore_url, tmp_file.name):
+                    import zipfile
+                    with zipfile.ZipFile(tmp_file.name, 'r') as zip_ref:
+                        zip_ref.extractall(os.path.dirname(vector_store_path))
+                    os.unlink(tmp_file.name)
+                    print(f"✅ ベクターストアを展開しました: {vector_store_path}")
+                else:
+                    print(f"❌ ベクターストアのダウンロードに失敗しました")
+        else:
+            print(f"⚠️ VECTORSTORE_URLが設定されていません")
+
+
 def _build_rag_chain():
     google_api_key = getattr(settings, "GOOGLE_API_KEY", None)
     if not google_api_key:
         raise RuntimeError("GOOGLE_API_KEY が設定されていません")
 
+    # ベクターストアの存在確認とダウンロード
+    _ensure_vectorstore_exists()
+    
     vector_store_path = _default_vector_store_path()
     
     print(f"🔍 ベクターストアパス確認: {vector_store_path}")
