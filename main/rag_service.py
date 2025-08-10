@@ -4,6 +4,7 @@ import threading
 import requests
 import tempfile
 import re
+import zipfile
 from typing import Optional
 
 from django.conf import settings
@@ -28,11 +29,10 @@ _rag_chain = None
 def _extract_google_drive_file_id(url: str) -> Optional[str]:
     """Google DriveのURLからファイルIDを抽出"""
     patterns = [
-        r'/file/d/([a-zA-Z0-9-_]+)',
-        r'/d/([a-zA-Z0-9-_]+)',
-        r'id=([a-zA-Z0-9-_]+)'
+        r"/file/d/([a-zA-Z0-9-_]+)",
+        r"/d/([a-zA-Z0-9-_]+)",
+        r"id=([a-zA-Z0-9-_]+)",
     ]
-    
     for pattern in patterns:
         match = re.search(pattern, url)
         if match:
@@ -41,39 +41,45 @@ def _extract_google_drive_file_id(url: str) -> Optional[str]:
 
 
 def _download_from_google_drive(file_id: str, local_path: str) -> bool:
-    """Google Driveからファイルをダウンロード"""
+    """Google Driveからファイルをダウンロード（大容量確認トークンに対応）"""
     try:
         print(f"📥 Google Driveからファイルをダウンロード中: {file_id}")
-        
-        # Google Driveの直接ダウンロードURL
-        download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-        
-        # セッションを作成してCookieを管理
         session = requests.Session()
-        
-        # 最初のリクエストでCookieを取得
-        response = session.get(download_url, stream=True)
+
+        def _perform_download(token: Optional[str] = None):
+            params = {"export": "download", "id": file_id}
+            if token:
+                params["confirm"] = token
+            return session.get("https://drive.google.com/uc", params=params, stream=True)
+
+        # 1回目（トークンなし）
+        response = _perform_download()
         response.raise_for_status()
-        
-        # 大きなファイルの場合の確認ページを処理
-        if 'confirm=' in response.url:
-            confirm_token = re.search(r'confirm=([^&]+)', response.url).group(1)
-            download_url = f"https://drive.google.com/uc?export=download&confirm={confirm_token}&id={file_id}"
-            response = session.get(download_url, stream=True)
+
+        # Cookieにdownload_warningがあれば、その値で再リクエスト
+        token = None
+        for k, v in response.cookies.items():
+            if k.startswith("download_warning"):
+                token = v
+                break
+        if token:
+            response = _perform_download(token)
             response.raise_for_status()
-        
-        # ディレクトリを作成
+
+        # HTMLが返ってきていないか簡易チェック
+        content_type = response.headers.get("Content-Type", "")
+        if "text/html" in content_type.lower():
+            print("❌ 取得したコンテンツはHTMLです。共有設定やリンク形式を確認してください。")
+            return False
+
         os.makedirs(os.path.dirname(local_path), exist_ok=True)
-        
-        # ファイルをダウンロード
-        with open(local_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
+        with open(local_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=1024 * 1024):
                 if chunk:
                     f.write(chunk)
-        
+
         print(f"✅ Google Driveからのダウンロード完了: {local_path}")
         return True
-        
     except Exception as e:
         print(f"❌ Google Driveからのダウンロードに失敗: {e}")
         return False
@@ -83,26 +89,30 @@ def _download_vectorstore_from_url(url: str, local_path: str) -> bool:
     """外部URLからベクターストアをダウンロード"""
     try:
         print(f"📥 ベクターストアをダウンロード中: {url}")
-        
+
         # Google DriveのURLかチェック
-        if 'drive.google.com' in url:
+        if "drive.google.com" in url:
             file_id = _extract_google_drive_file_id(url)
-            if file_id:
-                return _download_from_google_drive(file_id, local_path)
-            else:
+            if not file_id:
                 print("❌ Google DriveのURLからファイルIDを抽出できませんでした")
                 return False
-        
+            return _download_from_google_drive(file_id, local_path)
+
         # 通常のHTTPダウンロード
         response = requests.get(url, stream=True)
         response.raise_for_status()
-        
+
+        content_type = response.headers.get("Content-Type", "")
+        if "text/html" in content_type.lower():
+            print("❌ 取得したコンテンツはHTMLです。URLを直接ダウンロード可能なものにしてください。")
+            return False
+
         os.makedirs(os.path.dirname(local_path), exist_ok=True)
-        
-        with open(local_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-        
+        with open(local_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    f.write(chunk)
+
         print(f"✅ ベクターストアのダウンロード完了: {local_path}")
         return True
     except Exception as e:
@@ -119,26 +129,56 @@ def _default_vector_store_path() -> str:
     )
 
 
+def _post_extract_fixups(vector_store_path: str):
+    """展開後に想定外の配置だった場合の補正。トップに直接ファイルがある場合など。"""
+    parent_dir = os.path.dirname(vector_store_path)
+    index_f = os.path.join(parent_dir, "index.faiss")
+    index_p = os.path.join(parent_dir, "index.pkl")
+    if not os.path.exists(vector_store_path) and (os.path.exists(index_f) or os.path.exists(index_p)):
+        os.makedirs(vector_store_path, exist_ok=True)
+        if os.path.exists(index_f):
+            os.replace(index_f, os.path.join(vector_store_path, "index.faiss"))
+        if os.path.exists(index_p):
+            os.replace(index_p, os.path.join(vector_store_path, "index.pkl"))
+        print("ℹ️ ベクターストアファイルを規定のディレクトリに移動しました")
+
+
 def _ensure_vectorstore_exists():
     """ベクターストアが存在しない場合、外部からダウンロード"""
     vector_store_path = _default_vector_store_path()
-    
+
     if not os.path.exists(vector_store_path):
-        # 外部URLからダウンロードを試行
         vectorstore_url = os.getenv("VECTORSTORE_URL")
         if vectorstore_url:
-            # 一時ファイルにダウンロードしてから展開
-            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as tmp_file:
-                if _download_vectorstore_from_url(vectorstore_url, tmp_file.name):
-                    import zipfile
-                    with zipfile.ZipFile(tmp_file.name, 'r') as zip_ref:
-                        zip_ref.extractall(os.path.dirname(vector_store_path))
+            with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp_file:
+                downloaded = _download_vectorstore_from_url(vectorstore_url, tmp_file.name)
+            if not downloaded:
+                print("❌ ベクターストアのダウンロードに失敗しました。URLと共有設定を確認してください。")
+                return
+
+            # ZIP判定
+            if not zipfile.is_zipfile(tmp_file.name):
+                try:
+                    # 先頭数バイトを表示してデバッグに役立てる
+                    with open(tmp_file.name, "rb") as f:
+                        head = f.read(64)
+                    print(f"❌ ダウンロードしたファイルはZIPではありません。先頭バイト: {head[:16]!r}")
+                finally:
                     os.unlink(tmp_file.name)
-                    print(f"✅ ベクターストアを展開しました: {vector_store_path}")
-                else:
-                    print(f"❌ ベクターストアのダウンロードに失敗しました")
+                return
+
+            # 展開
+            try:
+                with zipfile.ZipFile(tmp_file.name, "r") as zip_ref:
+                    zip_ref.extractall(os.path.dirname(vector_store_path))
+                print(f"✅ ベクターストアを展開しました: {vector_store_path}")
+            finally:
+                os.unlink(tmp_file.name)
+
+            # 展開後補正
+            _post_extract_fixups(vector_store_path)
         else:
-            print(f"⚠️ VECTORSTORE_URLが設定されていません")
+            print("⚠️ VECTORSTORE_URLが設定されていません")
 
 
 def _build_rag_chain():
@@ -148,9 +188,9 @@ def _build_rag_chain():
 
     # ベクターストアの存在確認とダウンロード
     _ensure_vectorstore_exists()
-    
+
     vector_store_path = _default_vector_store_path()
-    
+
     print(f"🔍 ベクターストアパス確認: {vector_store_path}")
     if not os.path.exists(vector_store_path):
         raise FileNotFoundError(f"ベクターストアが見つかりません: {vector_store_path}")
@@ -164,29 +204,22 @@ def _build_rag_chain():
 
     # Embeddings と VectorStore を初期化
     print("📥 Embeddingsモデル初期化中...")
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001",
-        google_api_key=google_api_key
-    )
-    
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=google_api_key)
+
     print("📂 ベクターストア読み込み中...")
-    vector_store = FAISS.load_local(
-        vector_store_path, embeddings, allow_dangerous_deserialization=True
-    )
+    vector_store = FAISS.load_local(vector_store_path, embeddings, allow_dangerous_deserialization=True)
 
     base_retriever = vector_store.as_retriever(
-        search_type="similarity_score_threshold",
-        search_kwargs={"k": 16, "score_threshold": 0.1},
+        search_type="similarity_score_threshold", search_kwargs={"k": 16, "score_threshold": 0.1}
     )
 
     print("🤖 LLMモデル初期化中...")
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash-lite", 
-        google_api_key=google_api_key, 
+        model="gemini-2.5-flash-lite",
+        google_api_key=google_api_key,
         temperature=0,
-        # より安全な設定
         max_retries=1,
-        timeout=60
+        timeout=60,
     )
 
     prompt_template = (
@@ -207,7 +240,6 @@ def _build_rag_chain():
     )
     prompt = ChatPromptTemplate.from_template(prompt_template)
 
-    # シンプルなRetrieverを使用（MultiQueryRetrieverは一旦無効化）
     print("🔍 Retriever設定完了")
 
     def format_docs(docs):
@@ -217,9 +249,7 @@ def _build_rag_chain():
             title = md.get("title", "不明")
             author = md.get("author", "不明")
             source = md.get("source", "")
-            lines.append(
-                f"[{i}] タイトル: {title}（{author}）\n出典: {source}\n本文抜粋:\n{getattr(d, 'page_content', '')}"
-            )
+            lines.append(f"[{i}] タイトル: {title}（{author}）\n出典: {source}\n本文抜粋:\n{getattr(d, 'page_content', '')}")
         return "\n\n---\n\n".join(lines)
 
     def filter_docs(docs):
@@ -284,7 +314,7 @@ def _build_rag_chain():
             for t in terms:
                 s += text.count(t) * 2
             md = getattr(d, "metadata", {}) or {}
-            kw = md.get("keywords") or {}
+            kw = md.get("keywords", {}) or {}
             if isinstance(kw, dict):
                 for arr in kw.values():
                     for t in terms:
@@ -296,18 +326,12 @@ def _build_rag_chain():
         return ranked[:top_n]
 
     print("⚙️ RAGチェーン構築中...")
-    
-    # シンプルなRAGチェーンを構築
+
     def rag_pipeline(question):
-        # 基本的な検索（新しいAPIを使用）
         docs = base_retriever.invoke(question)
-        # 再ランク付け
         filtered_docs = rerank_docs(docs, question)
-        # フォーマット
         context = format_docs(filtered_docs)
-        # プロンプト生成
         messages = prompt.format_messages(context=context, question=question)
-        # LLMで回答生成（新しいAPIを使用）
         response = llm.invoke(messages)
         return response.content
 
@@ -332,56 +356,46 @@ def ensure_rag_ready():
 
 
 def _run_with_event_loop(func, *args, **kwargs):
-    """イベントループを作成してRAGチェーンを実行する"""
     try:
-        # 既存のイベントループがあるかチェック
         loop = asyncio.get_event_loop()
         if loop.is_running():
-            # 既存のループが実行中の場合、新しいスレッドで実行
             import concurrent.futures
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(_run_in_new_thread, func, *args, **kwargs)
                 return future.result()
         else:
-            # ループが停止している場合、そのまま実行
             return func(*args, **kwargs)
     except RuntimeError:
-        # イベントループが存在しない場合、新しく作成
         return _run_in_new_thread(func, *args, **kwargs)
 
+
 def _run_in_new_thread(func, *args, **kwargs):
-    """新しいスレッドでイベントループを作成して実行"""
     def run_with_new_loop():
-        # 新しいイベントループを作成
         new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(new_loop)
         try:
             return func(*args, **kwargs)
         finally:
             new_loop.close()
-    
+
     import concurrent.futures
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future = executor.submit(run_with_new_loop)
         return future.result()
 
+
 def ask(question: str) -> str:
-    """RAGで質問に回答する。準備が未完なら初期化してから実行。"""
     ensure_rag_ready()
-    
     try:
-        # シンプルなパイプライン実行
         print(f"🔍 RAG質問処理開始: {question}")
         result = _rag_chain(question)
         print(f"✅ RAG回答生成完了: {len(result)} 文字")
         return result
     except RuntimeError as e:
         if "event loop" in str(e).lower():
-            # イベントループエラーの場合、専用処理で実行
             print(f"⚠️ イベントループエラーを検出、代替実行中: {e}")
             return _run_with_event_loop(_rag_chain, question)
         else:
-            # その他のRuntimeErrorは再発生
             raise
 
 
