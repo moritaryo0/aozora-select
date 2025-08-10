@@ -192,9 +192,18 @@ def ensure_rag_ready():
         if not _rag_ready:
             print("🚀 RAGシステム初期化開始...")
             try:
-                # Railway環境では初期化をスキップ
-                if os.environ.get('RAILWAY_ENVIRONMENT'):
+                # Google APIキーの確認
+                google_api_key = getattr(settings, "GOOGLE_API_KEY", None)
+                if not google_api_key or not google_api_key.strip():
+                    print("⚠️ GOOGLE_API_KEYが設定されていません。RAGシステムをスキップします。")
+                    _rag_chain = None
+                    _rag_ready = True
+                    return
+                
+                # Railway環境では初期化をスキップ（本番環境での重い処理を避ける）
+                if os.environ.get('RAILWAY_ENVIRONMENT') and not os.environ.get('ENABLE_RAG_IN_RAILWAY'):
                     print("⚠️ Railway環境ではRAGシステム初期化をスキップします")
+                    print("⚠️ 本番環境でRAGを有効にするにはENABLE_RAG_IN_RAILWAY環境変数を設定してください")
                     _rag_chain = None
                     _rag_ready = True
                     return

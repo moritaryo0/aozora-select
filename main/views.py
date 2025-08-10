@@ -260,12 +260,21 @@ def rag_answer_api(request):
 
         print(f"🔍 RAG質問受信: {question}")
         
-        # Railway環境ではRAG機能を無効化
-        if os.environ.get('RAILWAY_ENVIRONMENT'):
+        # Google APIキーの確認
+        google_api_key = getattr(settings, 'GOOGLE_API_KEY', None)
+        if not google_api_key or not google_api_key.strip():
+            return JsonResponse({
+                'success': False,
+                'error': 'Google API key not configured',
+                'message': 'RAG機能を使用するにはGOOGLE_API_KEYの設定が必要です。'
+            }, status=400)
+        
+        # Railway環境ではRAG機能を無効化（本番環境での重い処理を避ける）
+        if os.environ.get('RAILWAY_ENVIRONMENT') and not os.environ.get('ENABLE_RAG_IN_RAILWAY'):
             return JsonResponse({
                 'success': False,
                 'error': 'RAG機能は現在利用できません',
-                'message': 'Railway環境ではRAG機能が無効化されています。'
+                'message': 'Railway環境ではRAG機能が無効化されています。本番環境でRAGを有効にするにはENABLE_RAG_IN_RAILWAY環境変数を設定してください。'
             }, status=503)
         
         answer = rag_ask(question)

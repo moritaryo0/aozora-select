@@ -113,6 +113,18 @@ def get_integrated_recommendation(lat=35.681236, lon=139.767125, openweather_api
     try:
         print("🌟 統合推薦システム開始")
         
+        # Google APIキーの確認
+        from django.conf import settings
+        google_api_key = getattr(settings, 'GOOGLE_API_KEY', None)
+        if not google_api_key or not google_api_key.strip():
+            return {
+                'success': False,
+                'error': 'Google API key not configured',
+                'recommendation': '申し訳ございません。RAGシステムが初期化されていません。しばらく時間をおいてから再度お試しください。',
+                'timestamp': datetime.now().isoformat(),
+                'type': 'integrated_weather_rag'
+            }
+        
         # 天気情報を取得
         weather_info = None
         if openweather_api_key:
