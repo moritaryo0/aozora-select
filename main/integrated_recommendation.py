@@ -7,7 +7,7 @@ from .utils import get_weather_data, get_mock_weather_data
 from .rag_service import ask as rag_ask
 
 
-def create_weather_rag_prompt(weather_info, location_name="現在地"):
+def create_weather_rag_prompt(weather_info, location_name="現在地", exclude_text=None):
     """
     天気情報を使ってRAG検索用のプロンプトを生成
     """
@@ -73,6 +73,8 @@ def create_weather_rag_prompt(weather_info, location_name="現在地"):
 この{weather_mood}雰囲気と{temp_mood}読書体験、そして{season_mood}季節感を考慮して、
 青空文庫の中から今この瞬間に読むのにぴったりな短編作品（1時間以内で読める）を1つ推薦してください。
 
+{f"【重要】以下の作品は除外してください(空の場合は無視)：{exclude_text}" if exclude_text else ""}
+
 条件：
 - 誰もが知っているような超有名作品は避けてください
 - 現在の天気や季節感、時間帯にマッチする作品
@@ -81,11 +83,13 @@ def create_weather_rag_prompt(weather_info, location_name="現在地"):
 
 以下の形式で回答してください：
 
-**作品名**：[作品名]
-**作者名**：[作者名]
-**推薦理由**：[今の天気・時間・季節に合う理由を詳しく]
-**作品の魅力**：[作品の特徴やあらすじを簡潔に]
-**読書体験**：[この天気・時間帯で読むことの特別さ]
+-作品名-：[作品名]
+-作者名-：[作者名]
+-文字数-：[作品の文字数]
+-読書体験-：[簡単な選書理由とこの天気・時間帯でおすすめのシチュエーション(BGMなど)の提案]
+
+-作品の魅力-：[作品の特徴やあらすじを簡潔に]
+
 
 参考にした作品名（タイトル・作者）も最後に記載してください。
 """
@@ -93,7 +97,7 @@ def create_weather_rag_prompt(weather_info, location_name="現在地"):
     return prompt.strip()
 
 
-def get_integrated_recommendation(lat=35.681236, lon=139.767125, openweather_api_key=None):
+def get_integrated_recommendation(lat=35.681236, lon=139.767125, openweather_api_key=None, exclude_text=None):
     """
     天気情報とRAGを統合した推薦システム
     
@@ -101,6 +105,7 @@ def get_integrated_recommendation(lat=35.681236, lon=139.767125, openweather_api
         lat (float): 緯度（デフォルト: 東京駅）
         lon (float): 経度（デフォルト: 東京駅）
         openweather_api_key (str): OpenWeatherMap APIキー
+        exclude_text (str): 除外したい作品の情報
         
     Returns:
         dict: 統合推薦結果
@@ -124,7 +129,7 @@ def get_integrated_recommendation(lat=35.681236, lon=139.767125, openweather_api
         
         # 天気情報を基にRAG検索用プロンプトを生成
         location_name = weather_info.get('city_name', '現在地')
-        rag_prompt = create_weather_rag_prompt(weather_info, location_name)
+        rag_prompt = create_weather_rag_prompt(weather_info, location_name, exclude_text)
         
         print(f"📝 生成されたRAGプロンプト: {rag_prompt[:200]}...")
         

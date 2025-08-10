@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja" data-theme="dark">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,7 +37,8 @@
         }
 
         /* Dark Mode */
-        [data-theme="dark"] {
+        /* Removed dark mode */
+        .removed-dark-mode {
             --md-primary: #d0bcff;
             --md-on-primary: #381e72;
             --md-primary-container: #4f378b;
@@ -116,50 +117,28 @@
             gap: 8px;
         }
         
-        /* Dark Mode Toggle */
-        .theme-toggle {
-            background: var(--md-surface-variant);
+        .social-icon {
             color: var(--md-on-surface-variant);
-            border: 1px solid var(--md-outline-variant);
-            border-radius: 20px;
-            padding: 8px 16px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 14px;
+            text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            background: transparent;
         }
+        
+        .social-icon:hover {
+            color: var(--md-primary);
+            background: var(--md-primary-container);
+            transform: translateY(-1px);
+        }
+        
 
-        .theme-toggle:hover {
-            background: var(--md-secondary-container);
-            color: var(--md-on-secondary-container);
-        }
         
-        /* Hero Section */
-        .hero {
-            padding: 80px 0 40px;
-            text-align: center;
-            background: linear-gradient(135deg, rgba(var(--md-primary-rgb), 0.08) 0%, rgba(var(--md-secondary-rgb), 0.05) 100%);
-        }
-        
-        .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 700;
-            margin-bottom: 24px;
-            background: linear-gradient(135deg, var(--md-primary), var(--md-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .hero .subtitle {
-            font-size: 1.3rem;
-            color: var(--md-on-surface-variant);
-            margin-bottom: 16px;
-            font-weight: 400;
-        }
-        
+
         /* Modern Card Design */
         .feature-cards {
             display: grid;
@@ -203,7 +182,7 @@
         
         /* Weather & Recommendation Section */
         .weather-recommendation-section {
-            padding: 48px 0;
+            padding: 24px 0 48px;
             background: var(--md-surface);
         }
         
@@ -285,28 +264,40 @@
         
         /* Weather Compact Display */
         .weather-compact {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            gap: 24px;
-            align-items: center;
             background: var(--md-surface-variant);
             padding: 20px;
             border-radius: 16px;
             margin-bottom: 32px;
         }
         
-        .weather-icon {
-            font-size: 2.5rem;
+        .weather-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 12px;
+            height: 200px;
         }
         
-        .weather-main-info {
+        .weather-main-item {
+            background: var(--md-surface);
+            border-radius: 12px;
+            padding: 12px;
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            text-align: center;
+            grid-column: 1 / 4;
+            grid-row: 1 / 2;
+        }
+        
+        .weather-icon {
+            font-size: 2rem;
+            margin-bottom: 0;
         }
         
         .weather-location {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: 600;
             color: var(--md-on-surface);
         }
@@ -318,25 +309,34 @@
         }
         
         .weather-desc {
-            font-size: 14px;
+            font-size: 16px;
             color: var(--md-on-surface-variant);
+            font-weight: 500;
         }
         
-        .weather-details-mini {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            text-align: right;
+        .weather-detail-item {
+            background: var(--md-surface);
+            padding: 12px 8px;
+            border-radius: 8px;
+            color: var(--md-on-surface-variant);
             font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
         }
         
-        .weather-detail-mini {
-            color: var(--md-on-surface-variant);
+        .weather-detail-item .label {
+            font-size: 11px;
+            margin-bottom: 4px;
+            opacity: 0.8;
         }
         
-        .weather-detail-mini .value {
+        .weather-detail-item .value {
             font-weight: 600;
             color: var(--md-on-surface);
+            font-size: 14px;
         }
         
         /* Recommendation within weather section */
@@ -502,31 +502,118 @@
         /* Responsive */
         @media (max-width: 768px) {
             .container {
-                padding: 0 16px;
+                padding: 0;
+                max-width: 100%;
             }
             
-            .hero h1 {
-                font-size: 2.5rem;
+            header {
+                padding: 8px 12px;
+                margin-bottom: 0;
             }
             
-            .weather-compact {
-                grid-template-columns: 1fr;
-                text-align: center;
-                gap: 16px;
+
+            main {
+                margin-top: 0;
             }
             
-            .weather-details-mini {
-                grid-template-columns: repeat(4, 1fr);
-                text-align: center;
+            .weather-recommendation-section {
+                padding: 12px 0 16px;
             }
             
-            .nav-links a:not(.theme-toggle) {
+            .weather-recommendation-card {
+                margin: 0;
+                padding: 16px 12px;
+                border-radius: 0;
+            }
+            
+            .section-header h3 {
+                font-size: 1.2rem;
+                margin-bottom: 12px;
+            }
+            
+            .weather-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-rows: 1fr 1fr;
+                gap: 8px;
+                height: 160px;
+            }
+            
+            .weather-main-item {
+                padding: 8px 6px;
+            }
+            
+            .weather-icon {
+                font-size: 1.5rem;
+                margin-bottom: 0;
+            }
+            
+            .weather-location {
+                font-size: 12px;
+            }
+            
+            .weather-temp {
+                font-size: 20px;
+            }
+            
+            .weather-desc {
+                font-size: 14px;
+            }
+            
+            .weather-detail-item {
+                padding: 8px 4px;
+                font-size: 11px;
+            }
+            
+            .weather-detail-item .label {
+                font-size: 10px;
+            }
+            
+            .weather-detail-item .value {
+                font-size: 12px;
+            }
+            
+            .nav-links a {
                 display: none;
+            }
+            
+            .social-icon {
+                width: 36px;
+                height: 36px;
             }
             
             .chip-group {
                 flex-direction: column;
                 align-items: center;
+            }
+            
+            .recommendation-section {
+                padding: 16px 0;
+            }
+            
+            .recommendation-header {
+                margin-bottom: 16px;
+                padding: 0 12px;
+            }
+            
+            .recommendation-header h2 {
+                font-size: 1.5rem;
+                margin-bottom: 8px;
+            }
+            
+            .recommendation-header p {
+                font-size: 13px;
+                margin-bottom: 0;
+            }
+            
+            #recommendationSettings {
+                padding: 0 12px;
+            }
+            
+            #getRecommendationBtn {
+                padding: 14px 20px;
+                font-size: 1rem;
+                width: 100%;
+                max-width: 280px;
             }
         }
     </style>
@@ -534,22 +621,17 @@
 <body>
     <header>
         <div class="header-content">
-            <a href="/" class="logo">📚 青空セレクト</a>
-            <button class="theme-toggle" onclick="toggleTheme()" aria-label="テーマ切り替え">
-                <span>🌙</span>
-                <span>ダークモード</span>
-            </button>
+            <a href="/" class="logo">青空文庫アシスト(仮)</a>
+            <a href="https://x.com/marukoporo91" class="social-icon" target="_blank" rel="noopener noreferrer">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+            </a>
         </div>
     </header>
 
     <main>
-        <!-- Hero Section -->
-        <section class="hero">
-            <div class="container">
-                <h1>本を読もうにゃ</h1>
-                <a class="subtitle" href="https://www.youtube.com/@biwakokun">このクソみたいな日常から脱却するために</a>
-            </div>
-        </section>
+
 
         <!-- 天気情報セクション -->
         <section class="weather-recommendation-section">
@@ -565,28 +647,23 @@
                             <h3>現在の天気</h3>
                         </div>
                         <div class="weather-compact">
-                            <div class="weather-icon" id="weatherEmoji">🌤️</div>
-                            <div class="weather-main-info">
-                                <div class="weather-location" id="weatherLocation">現在地</div>
-                                <div class="weather-temp" id="weatherTemp">--°C</div>
-                                <div class="weather-desc" id="weatherDesc">--</div>
-                            </div>
-                            <div class="weather-details-mini">
-                                <div class="weather-detail-mini">
+                            <div class="weather-grid">
+                                <div class="weather-main-item">
+                                    <div class="weather-icon" id="weatherEmoji">🌤️</div>
+                                    <div class="weather-location" id="weatherLocation">現在地</div>
+                                    <div class="weather-temp" id="weatherTemp">--°C</div>
+                                </div>
+                                <div class="weather-detail-item">
+                                    <div class="label">天気</div>
+                                    <div class="value" id="weatherDesc">--</div>
+                                </div>
+                                <div class="weather-detail-item">
                                     <div class="label">体感温度</div>
                                     <div class="value" id="weatherFeelsLike">--°C</div>
                                 </div>
-                                <div class="weather-detail-mini">
+                                <div class="weather-detail-item">
                                     <div class="label">湿度</div>
                                     <div class="value" id="weatherHumidity">--%</div>
-                                </div>
-                                <div class="weather-detail-mini">
-                                    <div class="label">風速</div>
-                                    <div class="value" id="weatherWind">-- m/s</div>
-                                </div>
-                                <div class="weather-detail-mini">
-                                    <div class="label">雲量</div>
-                                    <div class="value" id="weatherClouds">--%</div>
                                 </div>
                             </div>
                         </div>
@@ -600,8 +677,8 @@
                             <!-- 推薦設定 -->
                             <div id="recommendationSettings">
                                 <div style="text-align: center;">
-                                    <button class="btn-primary" id="getRecommendationBtn" onclick="getBookRecommendation()">
-                                        📚 おすすめの本を探す
+                                    <button class="btn-primary" id="getRecommendationBtn" onclick="handleRecommendationRequest()">
+                                        📚 <span id="mainButtonText">おすすめの本を探す</span>
                                     </button>
                                     <div style="margin-top: 16px; font-size: 14px; color: var(--md-on-surface-variant);">
                                     </div>
@@ -618,7 +695,7 @@
                                 ">
                                     <div class="loading-spinner" style="margin-bottom: 16px;"></div>
                                     <h3 style="margin-bottom: 10px; color: var(--md-on-surface);">作品を選書中...</h3>
-                                    <p style="color: var(--md-on-surface-variant);">天気と時間を考慮して最適な作品を探しています</p>
+                                    <p style="color: var(--md-on-surface-variant);">とりあえず、短い小説から読んでみよう</p>
                                 </div>
 
                                 <!-- 推薦結果 -->
@@ -647,12 +724,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- 再推薦ボタン -->
-                                    <div style="text-align: center; margin-top: 25px;">
-                                        <button class="btn-secondary" onclick="getBookRecommendation()">
-                                            🔄 別の作品を推薦してもらう
-                                        </button>
-                                    </div>
+
                                 </div>
 
                                 <!-- エラー表示 -->
@@ -807,9 +879,7 @@
                 'weatherTemp': `${weather.temperature}°C`,
                 'weatherDesc': weather.weather_description || '--',
                 'weatherFeelsLike': `${weather.feels_like}°C`,
-                'weatherHumidity': `${weather.humidity}%`,
-                'weatherWind': `${weather.wind_speed} m/s`,
-                'weatherClouds': `${weather.clouds}%`
+                'weatherHumidity': `${weather.humidity}%`
             };
             
             Object.entries(weatherElements).forEach(([id, value]) => {
@@ -846,25 +916,76 @@
 
 
         // ページ読み込み時に実行
-        window.addEventListener('load', () => {
-            // テーマを最初に設定
-            setupThemeToggle();
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 DOM読み込み完了、初期化開始');
             
-            // 統合推薦システムでは特別なリスナー設定は不要
+            // 要素の存在確認
+            const mainButton = document.getElementById('getRecommendationBtn');
+            const mainButtonText = document.getElementById('mainButtonText');
+            console.log('🔍 要素確認:', { mainButton, mainButtonText });
+            
+            // メインボタンに長押しでリセット機能を追加
+            setupMainButtonLongPress();
+            
+            // ボタンテキストを初期状態に設定
+            updateMainButtonText();
             
             // その他の初期化処理
             checkAPIStatus();
             loadWeatherData();
             setInterval(checkAPIStatus, 30000);
         });
+        
+        // メインボタンの長押しリセット機能
+        function setupMainButtonLongPress() {
+            const btn = document.getElementById('getRecommendationBtn');
+            if (!btn) return;
+            
+            let pressTimer;
+            
+            btn.addEventListener('mousedown', () => {
+                pressTimer = setTimeout(() => {
+                    if (excludedRecommendations.length > 0) {
+                        if (confirm('除外履歴をリセットしますか？')) {
+                            resetExclusionHistory();
+                        }
+                    }
+                }, 1000); // 1秒長押し
+            });
+            
+            btn.addEventListener('mouseup', () => {
+                clearTimeout(pressTimer);
+            });
+            
+            btn.addEventListener('mouseleave', () => {
+                clearTimeout(pressTimer);
+            });
+            
+            // タッチデバイス対応
+            btn.addEventListener('touchstart', () => {
+                pressTimer = setTimeout(() => {
+                    if (excludedRecommendations.length > 0) {
+                        if (confirm('除外履歴をリセットしますか？')) {
+                            resetExclusionHistory();
+                        }
+                    }
+                }, 1000);
+            });
+            
+            btn.addEventListener('touchend', () => {
+                clearTimeout(pressTimer);
+            });
+        }
 
         // 作品推薦機能
         let currentLocation = null;
+        let lastRecommendation = null; // 直前の推薦作品を記録
+        let excludedRecommendations = []; // 除外する作品のリスト
 
         // 統合推薦システム用の関数（推薦モード選択は削除）
 
         // 統合推薦を取得する関数
-        async function getBookRecommendation() {
+        async function getBookRecommendation(isExcludingPrevious = false) {
             console.log('🌟 統合推薦機能開始');
             
             // ボタンを無効化（安全に）
@@ -892,8 +1013,14 @@
                     currentLocation = await getCurrentLocation();
                 }
                 
-                // 統合推薦APIを呼び出し
-                const url = `/api/integrated-recommend/?lat=${currentLocation.lat}&lon=${currentLocation.lon}`;
+                // 統合推薦APIを呼び出し（除外リストがある場合はクエリパラメータに追加）
+                let url = `/api/integrated-recommend/?lat=${currentLocation.lat}&lon=${currentLocation.lon}`;
+                if (excludedRecommendations.length > 0) {
+                    // 配列を文字列に変換してURLエンコード
+                    const excludeList = excludedRecommendations.join('、');
+                    url += `&exclude=${encodeURIComponent(excludeList)}`;
+                    console.log(`🚫 除外リスト(${excludedRecommendations.length}件): ${excludeList}`);
+                }
                 console.log(`📡 統合推薦API呼び出し: ${url}`);
                 
                 const response = await fetch(url);
@@ -983,12 +1110,84 @@
             }
             
             if (aiRecommendationText && data.recommendation) {
-                aiRecommendationText.textContent = data.recommendation;
+                // 作品名をリンク付きで表示
+                const linkedRecommendation = addAozoraLinks(data.recommendation);
+                aiRecommendationText.innerHTML = linkedRecommendation;
+                
+                // 直前の推薦作品を記録
+                lastRecommendation = data.recommendation;
+                
+                // 作品名を抽出して除外リストに追加
+                const bookTitle = extractBookTitle(data.recommendation);
+                if (bookTitle && !excludedRecommendations.includes(bookTitle)) {
+                    excludedRecommendations.push(bookTitle);
+                    console.log(`📚 除外リストに追加: ${bookTitle} (合計: ${excludedRecommendations.length}件)`);
+                    // ボタンテキストを更新（遅延実行で確実に）
+                    setTimeout(() => {
+                        updateMainButtonText();
+                    }, 100);
+                }
             }
             
             if (modelInfo) {
                 modelInfo.textContent = '🌟 統合AI推薦 (天気×RAG×季節感)';
             }
+        }
+        
+        // 推薦テキストに青空文庫検索リンクを追加する関数
+        function addAozoraLinks(recommendationText) {
+            // 作品名のパターンを検索してリンクに変換
+            let linkedText = recommendationText;
+            
+            // "-作品名-：[作品名]" の形式を検索してリンク化
+            linkedText = linkedText.replace(
+                /-作品名-：(.+?)(?:\n|-作者名-|$)/g,
+                (match, title) => {
+                    const cleanTitle = title.trim();
+                    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(cleanTitle + ' 青空文庫')}`;
+                    return `-作品名-：<a href="${searchUrl}" target="_blank" style="color: var(--md-primary); text-decoration: underline; font-weight: 500;">${cleanTitle}</a><br>`;
+                }
+            );
+            
+            // "作品名：[作品名]" の形式も検索してリンク化
+            linkedText = linkedText.replace(
+                /作品名[：:]\s*(.+?)(?:\n|作者|$)/g,
+                (match, title) => {
+                    const cleanTitle = title.trim();
+                    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(cleanTitle + ' 青空文庫')}`;
+                    return `作品名：<a href="${searchUrl}" target="_blank" style="color: var(--md-primary); text-decoration: underline; font-weight: 500;">${cleanTitle}</a><br>`;
+                }
+            );
+            
+            return linkedText;
+        }
+        
+        // 推薦テキストから作品名を抽出する関数
+        function extractBookTitle(recommendationText) {
+            // "-作品名-：" の形式から作品名を抽出
+            const titleMatch = recommendationText.match(/-作品名-：(.+?)(?:\n|-作者名-|$)/);
+            if (titleMatch && titleMatch[1]) {
+                return titleMatch[1].trim();
+            }
+            
+            // 別の形式も試行
+            const altMatch = recommendationText.match(/作品名[：:]\s*(.+?)(?:\n|作者|$)/);
+            if (altMatch && altMatch[1]) {
+                return altMatch[1].trim();
+            }
+            
+            // 最後の手段として最初の行から推測
+            const lines = recommendationText.split('\n');
+            for (const line of lines) {
+                if (line.includes('作品') && line.includes('：')) {
+                    const parts = line.split('：');
+                    if (parts.length > 1) {
+                        return parts[1].trim();
+                    }
+                }
+            }
+            
+            return null;
         }
 
         // 推薦エラーを表示
@@ -1021,6 +1220,66 @@
             });
         }
 
+        // 他の作品を探す機能
+        async function findOtherBook() {
+            console.log(`🔍 他の作品を探す (除外数: ${excludedRecommendations.length})`);
+            
+            // 除外リストを使って新しい推薦を取得
+            await getBookRecommendation(true);
+        }
+        
+        // 除外履歴をリセットする機能
+        function resetExclusionHistory() {
+            const excludedCount = excludedRecommendations.length;
+            excludedRecommendations = [];
+            lastRecommendation = null;
+            updateMainButtonText();
+            console.log(`🔄 除外履歴をリセット (${excludedCount}件をクリア)`);
+        }
+        
+        // メインボタンのテキストを動的に更新
+        function updateMainButtonText() {
+            const mainButtonText = document.getElementById('mainButtonText');
+            const mainButton = document.getElementById('getRecommendationBtn');
+            
+            console.log('🔧 ボタンテキスト更新:', {
+                element: mainButtonText,
+                buttonElement: mainButton,
+                excludedCount: excludedRecommendations.length,
+                excludedList: excludedRecommendations
+            });
+            
+            const newText = excludedRecommendations.length > 0 ? '他の作品を探す' : 'おすすめの本を探す';
+            
+            if (mainButtonText) {
+                mainButtonText.textContent = newText;
+                console.log(`✅ span要素でボタンテキストを「${newText}」に変更`);
+            } else if (mainButton) {
+                // フォールバック: span要素が見つからない場合は直接ボタンのinnerHTMLを変更
+                mainButton.innerHTML = `📚 ${newText}`;
+                console.log(`🔄 フォールバック: ボタン全体を「${newText}」に変更`);
+            } else {
+                console.error('❌ mainButtonTextもgetRecommendationBtnも見つかりません');
+                // さらなるフォールバック: セレクターで検索
+                const fallbackButton = document.querySelector('.btn-primary');
+                if (fallbackButton) {
+                    fallbackButton.innerHTML = `📚 ${newText}`;
+                    console.log(`🆘 セレクターフォールバック: ボタンを「${newText}」に変更`);
+                }
+            }
+        }
+        
+        // 統合された推薦リクエスト処理
+        function handleRecommendationRequest() {
+            if (excludedRecommendations.length > 0) {
+                // 除外リストがある場合は他の作品を探す
+                findOtherBook();
+            } else {
+                // 初回または履歴リセット後は通常推薦
+                getBookRecommendation();
+            }
+        }
+
         // 統合推薦システムでは個別のRAGテスト関数は不要
         
         // I'm Feeling Lucky機能
@@ -1046,42 +1305,7 @@
             return cookieValue;
         }
 
-        // ダークモード切り替え機能
-        function toggleTheme() {
-            const htmlElement = document.documentElement;
-            const currentTheme = htmlElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            htmlElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcon();
-        }
 
-        function updateThemeIcon() {
-            const themeToggle = document.querySelector('.theme-toggle');
-            const iconSpan = themeToggle?.querySelector('span:first-child');
-            const textSpan = themeToggle?.querySelector('span:last-child');
-            
-            if (iconSpan && textSpan) {
-                if (document.documentElement.getAttribute('data-theme') === 'dark') {
-                    iconSpan.textContent = '☀️';
-                    textSpan.textContent = 'ライトモード';
-                } else {
-                    iconSpan.textContent = '🌙';
-                    textSpan.textContent = 'ダークモード';
-                }
-            }
-        }
-
-        function setupThemeToggle() {
-            const htmlElement = document.documentElement;
-            
-            // 保存されたテーマを読み込み、なければダークモードをデフォルトに
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            htmlElement.setAttribute('data-theme', savedTheme);
-            
-            // ページ読み込み時にアイコンを更新
-            updateThemeIcon();
-        }
     </script>
     
     <style>
@@ -1096,32 +1320,63 @@
         
         /* モバイル対応 */
         @media (max-width: 768px) {
-            .recommendation-section {
-                padding: 40px 0 !important;
+            #recommendationResults {
+                margin: 16px 0;
             }
             
-            .recommendation-section h2 {
-                font-size: 1.8rem !important;
+            .result-card {
+                padding: 16px 12px;
+                margin: 0;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
             }
             
-            .recommendation-section .recommendation-settings {
-                padding: 20px !important;
+            .result-card h3 {
+                font-size: 1.3rem;
+                margin-bottom: 12px;
             }
             
-            .recommendation-section label {
-                flex-direction: column !important;
-                text-align: center !important;
-                padding: 15px !important;
+                    #aiRecommendationText {
+            font-size: 1rem !important;
+            line-height: 1.6 !important;
+            padding: 16px !important;
+        }
+        
+        #aiRecommendationText a {
+            color: var(--md-primary) !important;
+            text-decoration: underline !important;
+            font-weight: 500 !important;
+            transition: color 0.2s ease !important;
+        }
+        
+        #aiRecommendationText a:hover {
+            color: var(--md-primary-container) !important;
+            text-decoration: none !important;
+        }
+            
+            #aiModelInfo {
+                font-size: 0.8rem !important;
+                margin-bottom: 8px !important;
             }
             
-            .recommendation-section label small {
-                margin-left: 0 !important;
-                margin-top: 5px !important;
+            .loading-spinner {
+                width: 20px !important;
+                height: 20px !important;
             }
             
-            #getRecommendationBtn {
-                padding: 12px 25px !important;
-                font-size: 1rem !important;
+            .recommendation-error {
+                margin: 16px 0;
+                padding: 16px 12px;
+                border-radius: 0;
+            }
+            
+            .status-indicator {
+                position: fixed;
+                bottom: 10px;
+                right: 10px;
+                font-size: 0.8rem;
+                padding: 6px 10px;
             }
         }
     </style>

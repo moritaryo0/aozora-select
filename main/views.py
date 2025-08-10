@@ -400,8 +400,9 @@ def integrated_recommendation_api(request):
         # リクエストパラメータを取得
         lat = float(request.GET.get('lat', 35.681236))
         lon = float(request.GET.get('lon', 139.767125))
+        exclude_text = request.GET.get('exclude', None)
         
-        print(f"🌟 統合推薦API呼び出し: lat={lat}, lon={lon}")
+        print(f"🌟 統合推薦API呼び出し: lat={lat}, lon={lon}, exclude={exclude_text}")
         
         # OpenWeatherMap APIキーを取得
         openweather_api_key = os.environ.get('OPENWEATHERMAP_API_KEY')
@@ -410,7 +411,8 @@ def integrated_recommendation_api(request):
         result = get_integrated_recommendation(
             lat=lat, 
             lon=lon, 
-            openweather_api_key=openweather_api_key
+            openweather_api_key=openweather_api_key,
+            exclude_text=exclude_text
         )
         
         if result['success']:
