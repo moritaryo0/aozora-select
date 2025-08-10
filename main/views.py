@@ -24,7 +24,23 @@ from . import rag_service
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def health_check(request):
-    return JsonResponse({'status': 'ok', 'message': 'API is working'})
+    """ヘルスチェックエンドポイント"""
+    try:
+        # 基本的なアプリケーション状態を確認
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        
+        return JsonResponse({
+            'status': 'ok', 
+            'message': 'API is working',
+            'database': 'connected'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
 
 def welcome_page(request):
     """青空セレクトのウェルカムページ（天気情報付き）"""

@@ -213,6 +213,12 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    
+    # Railway環境での追加設定
+    if os.environ.get('RAILWAY_ENVIRONMENT'):
+        # RailwayではHTTPSを強制しない
+        SECURE_SSL_REDIRECT = False
+        SECURE_PROXY_SSL_HEADER = None
 
 # ベクトルストア設定
 VECTOR_STORE_PATH = BASE_DIR / "RAG_test" / "aozora_faiss_index"
