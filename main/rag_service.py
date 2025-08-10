@@ -192,6 +192,13 @@ def ensure_rag_ready():
         if not _rag_ready:
             print("🚀 RAGシステム初期化開始...")
             try:
+                # Railway環境では初期化をスキップ
+                if os.environ.get('RAILWAY_ENVIRONMENT'):
+                    print("⚠️ Railway環境ではRAGシステム初期化をスキップします")
+                    _rag_chain = None
+                    _rag_ready = True
+                    return
+                
                 _rag_chain = _build_rag_chain()
                 _rag_ready = True
                 print("✅ RAGシステム初期化完了")

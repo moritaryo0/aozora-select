@@ -35,7 +35,7 @@ DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
 # Railway環境でのALLOWED_HOSTS設定
 if os.environ.get('RAILWAY_ENVIRONMENT'):
-    ALLOWED_HOSTS = ['*']
+    ALLOWED_HOSTS = ['*', '.railway.app', '.up.railway.app']
 else:
     ALLOWED_HOSTS = ['*'] if DEBUG else os.environ.get('ALLOWED_HOSTS', '').split(',')
 
@@ -195,6 +195,28 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # カスタムユーザーモデルを設定
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
+# ログ設定
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
 LOGIN_URL = '/login/'
 LOGOUT_REDIRECT_URL = '/login/'
 LOGIN_REDIRECT_URL = '/my_page/'
@@ -213,7 +235,6 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    
     # Railway環境での追加設定
     if os.environ.get('RAILWAY_ENVIRONMENT'):
         # RailwayではHTTPSを強制しない

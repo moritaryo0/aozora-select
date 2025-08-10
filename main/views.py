@@ -259,6 +259,15 @@ def rag_answer_api(request):
             }, status=400)
 
         print(f"🔍 RAG質問受信: {question}")
+        
+        # Railway環境ではRAG機能を無効化
+        if os.environ.get('RAILWAY_ENVIRONMENT'):
+            return JsonResponse({
+                'success': False,
+                'error': 'RAG機能は現在利用できません',
+                'message': 'Railway環境ではRAG機能が無効化されています。'
+            }, status=503)
+        
         answer = rag_ask(question)
         print(f"✅ RAG回答完了: {len(answer)} 文字")
         
