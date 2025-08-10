@@ -1,0 +1,2 @@
+RAG_test/aozora_faiss_index/*.faiss filter=lfs diff=lfs merge=lfs -text
+RAG_test/aozora_faiss_index/*.pkl filter=lfs diff=lfs merge=lfs -text
