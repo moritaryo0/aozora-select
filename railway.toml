@@ -4,4 +4,9 @@ builder = "NIXPACKS"
 [deploy]
 startCommand = "python manage.py runserver 0.0.0.0:8000"
 restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 10 
+restartPolicyMaxRetries = 10
+
+# 永続ストレージの設定
+[[deploy.volumes]]
+source = "aozora-data"
+target = "/app/RAG_test/aozora_faiss_index" 
