@@ -210,6 +210,10 @@ if os.environ.get('RAILWAY_ENVIRONMENT'):
     print("🚀 Railway環境で起動中...")
     print(f"PORT: {os.environ.get('PORT', '8000')}")
     print(f"RAILWAY_ENVIRONMENT: {os.environ.get('RAILWAY_ENVIRONMENT')}")
+    print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
+    print(f"SECRET_KEY: {'set' if os.environ.get('SECRET_KEY') else 'not set'}")
+    print(f"DEBUG: {DEBUG}")
+    print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 
 LOGIN_URL = '/login/'
 LOGOUT_REDIRECT_URL = '/login/'
