@@ -33,11 +33,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-jr)7*2(f8hb7jm(s&ocd)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
-# Railway環境でのALLOWED_HOSTS設定
-if os.environ.get('RAILWAY_ENVIRONMENT'):
-    ALLOWED_HOSTS = ['*', '.railway.app', '.up.railway.app']
-else:
-    ALLOWED_HOSTS = ['*'] if DEBUG else os.environ.get('ALLOWED_HOSTS', '').split(',')
+# ALLOWED_HOSTS設定
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -128,22 +125,13 @@ WSGI_APPLICATION = 'app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
-
-if DATABASE_URL:
-    # Railway PostgreSQL設定
-    import dj_database_url
-    DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL)
+# データベース設定
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-else:
-    # 開発環境用SQLite
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
 
 
 # Password validation
