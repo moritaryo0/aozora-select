@@ -107,8 +107,8 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR('VECTOR_STORE_PATHがsettings.pyで設定されていません。'))
             return
 
-        drive_file_id = getattr(settings, "GOOGLE_DRIVE_FILE_ID", None)
-        if not drive_file_id:
+        id_or_url = getattr(settings, "GOOGLE_DRIVE_FILE_ID", None)
+        if not id_or_url:
             self.stderr.write(self.style.ERROR('GOOGLE_DRIVE_FILE_IDがsettings.pyで設定されていません。'))
             return
 
@@ -116,11 +116,14 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f'✅ ベクターストアは既に存在します: {vector_store_path}'))
             return
         
-        # 親ディレクトリを作成
         parent_dir = os.path.dirname(vector_store_path)
         os.makedirs(parent_dir, exist_ok=True)
 
-        drive_url = f'https://drive.google.com/file/d/{drive_file_id}/view?usp=sharing'
+        # 環境変数がIDかURLかを判定して、適切なURLを組み立てる
+        if "drive.google.com" in id_or_url:
+            drive_url = id_or_url
+        else:
+            drive_url = f'https://drive.google.com/file/d/{id_or_url}/view?usp=sharing'
 
         try:
             with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as tmp_file:
