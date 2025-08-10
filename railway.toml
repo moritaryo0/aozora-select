@@ -1,12 +1,12 @@
-[build]
+"""[build]
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "python manage.py runserver 0.0.0.0:8000"
+startCommand = "python manage.py download_vectorstore && python manage.py migrate && python manage.py runserver 0.0.0.0:$PORT"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
 # 永続ストレージの設定
 [[deploy.volumes]]
 source = "aozora-data"
-target = "/app/RAG_test/aozora_faiss_index" 
+target = "/code/RAG_test" "" 

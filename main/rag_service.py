@@ -120,13 +120,12 @@ def _download_vectorstore_from_url(url: str, local_path: str) -> bool:
         return False
 
 
-def _default_vector_store_path() -> str:
-    # RAG_test/aozora_faiss_index をデフォルトに
-    base_dir = getattr(settings, "BASE_DIR", os.getcwd())
-    return os.getenv(
-        "VECTOR_STORE_PATH",
-        os.path.join(base_dir, "RAG_test", "aozora_faiss_index"),
-    )
+"""def _default_vector_store_path() -> str:
+    # settings.pyからベクターストアのパスを取得
+    vector_store_path = getattr(settings, "VECTOR_STORE_PATH", None)
+    if not vector_store_path:
+        raise ValueError("VECTOR_STORE_PATHがsettings.pyで設定されていません。")
+    return str(vector_store_path)""
 
 
 def _post_extract_fixups(vector_store_path: str):
