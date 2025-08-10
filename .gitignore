@@ -65,4 +65,10 @@ htmlcov/
 .pytest_cache/
 
 # Railway
-.railway/ 
+.railway/
+
+# Vector store files (large files)
+RAG_test/aozora_faiss_index/
+*.faiss
+*.pkl
+aozora_faiss_index.zip 
