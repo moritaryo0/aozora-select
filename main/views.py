@@ -5,6 +5,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.views.decorators.http import require_http_methods
+import os
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from .models import AozoraBook
@@ -16,6 +17,7 @@ from .utils import (
 from django.views.decorators.http import require_http_methods
 from .rag_service import ask as rag_ask
 from .integrated_recommendation import get_integrated_recommendation
+from . import rag_service
 
 # Create your views here.
 
@@ -180,6 +182,49 @@ def weather_api(request):
             'error': 'Invalid coordinates or API error',
             'message': f'座標が無効か、APIエラーが発生しました: {str(e)}'
         }, status=400)
+
+
+@api_view(['POST', 'GET'])
+@permission_classes([AllowAny])
+def admin_download_vectorstore(request):
+    """管理用: ベクターストアを外部URLからダウンロードして展開する
+    セキュリティ: 環境変数 ADMIN_TASK_TOKEN とクエリ/ボディの token を一致させる
+    使い方:
+      - POST /api/admin/download-vectorstore/?token=...  または JSON {"token": "..."}
+    """
+    try:
+        admin_token_env = os.getenv('ADMIN_TASK_TOKEN')
+        token = request.GET.get('token') or getattr(request, 'data', {}).get('token') if hasattr(request, 'data') else None
+        if not admin_token_env:
+            return JsonResponse({'success': False, 'error': 'ADMIN_TASK_TOKEN が未設定です'}, status=400)
+        if not token or token != admin_token_env:
+            return JsonResponse({'success': False, 'error': '認可エラー: token が不正です'}, status=401)
+
+        # ダウンロードと展開
+        # rag_service._ensure_vectorstore_exists() は存在しない場合のみ実行する設計
+        # 強制再取得したい場合は VECTORSTORE_URL を更新し、既存ディレクトリを空にする運用とする
+        # 現在は存在しない場合の取得に対応
+        vector_store_path = rag_service._default_vector_store_path()
+        before_exists = os.path.exists(vector_store_path)
+        rag_service._ensure_vectorstore_exists()
+        after_exists = os.path.exists(vector_store_path)
+
+        files = []
+        if after_exists:
+            try:
+                files = os.listdir(vector_store_path)
+            except Exception:
+                files = []
+
+        return JsonResponse({
+            'success': True,
+            'vector_store_path': vector_store_path,
+            'existed_before': before_exists,
+            'exists_now': after_exists,
+            'files': files,
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
