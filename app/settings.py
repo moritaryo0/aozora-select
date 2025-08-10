@@ -31,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-jr)7*2(f8hb7jm(s&ocd))+)mrp17)1z_wn$w%v#50)xq9@vax')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+DEBUG = True
 
 # ALLOWED_HOSTS設定
 ALLOWED_HOSTS = ['*']
@@ -194,16 +194,22 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'INFO',
+        'level': 'DEBUG',
     },
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'INFO',
+            'level': 'DEBUG',
             'propagate': False,
         },
     },
 }
+
+# Railway環境での設定
+if os.environ.get('RAILWAY_ENVIRONMENT'):
+    print("🚀 Railway環境で起動中...")
+    print(f"PORT: {os.environ.get('PORT', '8000')}")
+    print(f"RAILWAY_ENVIRONMENT: {os.environ.get('RAILWAY_ENVIRONMENT')}")
 
 LOGIN_URL = '/login/'
 LOGOUT_REDIRECT_URL = '/login/'
