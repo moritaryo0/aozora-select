@@ -3,6 +3,7 @@ import asyncio
 import threading
 import requests
 import tempfile
+import re
 from typing import Optional
 
 from django.conf import settings
@@ -24,10 +25,75 @@ _rag_ready = False
 _rag_chain = None
 
 
+def _extract_google_drive_file_id(url: str) -> Optional[str]:
+    """Google DriveのURLからファイルIDを抽出"""
+    patterns = [
+        r'/file/d/([a-zA-Z0-9-_]+)',
+        r'/d/([a-zA-Z0-9-_]+)',
+        r'id=([a-zA-Z0-9-_]+)'
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+
+def _download_from_google_drive(file_id: str, local_path: str) -> bool:
+    """Google Driveからファイルをダウンロード"""
+    try:
+        print(f"📥 Google Driveからファイルをダウンロード中: {file_id}")
+        
+        # Google Driveの直接ダウンロードURL
+        download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+        
+        # セッションを作成してCookieを管理
+        session = requests.Session()
+        
+        # 最初のリクエストでCookieを取得
+        response = session.get(download_url, stream=True)
+        response.raise_for_status()
+        
+        # 大きなファイルの場合の確認ページを処理
+        if 'confirm=' in response.url:
+            confirm_token = re.search(r'confirm=([^&]+)', response.url).group(1)
+            download_url = f"https://drive.google.com/uc?export=download&confirm={confirm_token}&id={file_id}"
+            response = session.get(download_url, stream=True)
+            response.raise_for_status()
+        
+        # ディレクトリを作成
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        
+        # ファイルをダウンロード
+        with open(local_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+        
+        print(f"✅ Google Driveからのダウンロード完了: {local_path}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Google Driveからのダウンロードに失敗: {e}")
+        return False
+
+
 def _download_vectorstore_from_url(url: str, local_path: str) -> bool:
     """外部URLからベクターストアをダウンロード"""
     try:
         print(f"📥 ベクターストアをダウンロード中: {url}")
+        
+        # Google DriveのURLかチェック
+        if 'drive.google.com' in url:
+            file_id = _extract_google_drive_file_id(url)
+            if file_id:
+                return _download_from_google_drive(file_id, local_path)
+            else:
+                print("❌ Google DriveのURLからファイルIDを抽出できませんでした")
+                return False
+        
+        # 通常のHTTPダウンロード
         response = requests.get(url, stream=True)
         response.raise_for_status()
         
