@@ -24,6 +24,9 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),
     path('api/', include('main.urls')),
     
+    # ヘルスチェックエンドポイント
+    path('health/', views.health_check, name='health_check'),
+    
     # メインページ：青空セレクトのウェルカムページ
     path('', views.welcome_page, name='welcome'),
     

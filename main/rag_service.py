@@ -197,7 +197,10 @@ def ensure_rag_ready():
                 print("✅ RAGシステム初期化完了")
             except Exception as e:
                 print(f"❌ RAGシステム初期化失敗: {e}")
-                raise
+                # 初期化失敗時はNoneを設定して後で再試行できるようにする
+                _rag_chain = None
+                _rag_ready = False
+                print("⚠️ RAGシステム初期化をスキップしました。後で再試行されます。")
 
 
 def _run_with_event_loop(func, *args, **kwargs):
@@ -230,8 +233,11 @@ def _run_in_new_thread(func, *args, **kwargs):
 
 
 def ask(question: str) -> str:
-    ensure_rag_ready()
     try:
+        ensure_rag_ready()
+        if _rag_chain is None:
+            return "申し訳ございません。RAGシステムが初期化されていません。しばらく時間をおいてから再度お試しください。"
+        
         print(f"🔍 RAG質問処理開始: {question}")
         result = _rag_chain(question)
         print(f"✅ RAG回答生成完了: {len(result)} 文字")
@@ -241,4 +247,7 @@ def ask(question: str) -> str:
             print(f"⚠️ イベントループエラーを検出、代替実行中: {e}")
             return _run_with_event_loop(_rag_chain, question)
         else:
-            raise
+            return f"エラーが発生しました: {str(e)}"
+    except Exception as e:
+        print(f"❌ RAG処理中にエラーが発生: {e}")
+        return f"申し訳ございません。処理中にエラーが発生しました: {str(e)}"

@@ -2,11 +2,16 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "python manage.py download_vectorstore && python manage.py migrate && python manage.py runserver 0.0.0.0:$PORT"
+startCommand = "python manage.py migrate && python manage.py runserver 0.0.0.0:$PORT"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
 # 永続ストレージの設定
 [[deploy.volumes]]
 source = "aozora-data"
-target = "/code/RAG_test" 
+target = "/code/RAG_test"
+
+# 環境変数の設定
+[deploy.variables]
+DEBUG = "False"
+ALLOWED_HOSTS = "*.railway.app" 
