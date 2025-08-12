@@ -42,6 +42,40 @@ def health_check(request):
             'message': str(e)
         }, status=500)
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def rag_status(request):
+    """RAGの有効化状況と前提条件を返す簡易ステータスAPI"""
+    try:
+        railway = bool(os.environ.get('RAILWAY_ENVIRONMENT'))
+        enabled_flag = bool(os.environ.get('ENABLE_RAG_IN_RAILWAY'))
+        google_key_set = bool(getattr(settings, 'GOOGLE_API_KEY', '') or os.environ.get('GOOGLE_API_KEY', ''))
+        try:
+            vs = rag_service._vectorstore_status()
+        except Exception as e:
+            vs = {'error': str(e)}
+
+        status = {
+            'railway': railway,
+            'enabled_flag': enabled_flag,
+            'google_api_key_set': google_key_set,
+            'vector_store': vs,
+        }
+
+        problems = []
+        if railway and not enabled_flag:
+            problems.append('ENABLE_RAG_IN_RAILWAY を true に設定してください')
+        if not google_key_set:
+            problems.append('GOOGLE_API_KEY を設定してください')
+        if isinstance(vs, dict) and not vs.get('exists', False):
+            problems.append('VECTOR_STORE_PATH にベクトルストアが存在しません')
+
+        status['problems'] = problems
+        status['ok'] = len(problems) == 0
+        return JsonResponse(status)
+    except Exception as e:
+        return JsonResponse({'ok': False, 'error': str(e)}, status=500)
+
 def welcome_page(request):
     """青空セレクトのウェルカムページ（天気情報付き）"""
     weather_data = None

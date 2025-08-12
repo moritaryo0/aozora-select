@@ -6,6 +6,7 @@ app_name = 'main'
 urlpatterns = [
     # API エンドポイント（/api/ プレフィックス付きでアクセス）
     path('health/', views.health_check, name='health'),
+    path('rag/status/', views.rag_status, name='rag_status'),
     path('popular-books/', views.popular_books_api, name='popular_books_api'),
     path('weather/', views.weather_api, name='weather_api'),
     path('admin/download-vectorstore/', views.admin_download_vectorstore, name='admin_download_vectorstore'),
