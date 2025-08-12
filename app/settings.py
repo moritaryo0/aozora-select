@@ -146,6 +146,17 @@ DATABASES = {
     )
 }
 
+# Postgres 接続タイムアウト・SSL 設定（ハング回避のため）
+_db = DATABASES.get('default', {})
+_engine = _db.get('ENGINE', '')
+if 'postgresql' in _engine:
+    _db.setdefault('OPTIONS', {})
+    # 接続タイムアウト（秒）: 未指定なら 5 秒
+    _db['OPTIONS'].setdefault('connect_timeout', int(os.environ.get('DATABASE_CONN_TIMEOUT', '5')))
+    # Railway の Postgres は通常 SSL 必須
+    if os.environ.get('RAILWAY_ENVIRONMENT'):
+        _db['OPTIONS'].setdefault('sslmode', os.environ.get('PGSSLMODE', 'require'))
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
