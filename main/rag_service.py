@@ -10,12 +10,6 @@ from django.core.management import call_command
 os.environ["LANGCHAIN_TRACING_V2"] = "false"
 os.environ["LANGCHAIN_CALLBACKS_MANAGER"] = "disabled"
 
-from langchain_community.vectorstores import FAISS
-from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
-
 
 _rag_lock = threading.Lock()
 _rag_ready = False
@@ -89,6 +83,14 @@ def _default_vector_store_path() -> str:
 
 
 def _build_rag_chain():
+    # 重い依存はここで遅延インポート
+    try:
+        from langchain_community.vectorstores import FAISS
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+        from langchain_core.prompts import ChatPromptTemplate
+    except ImportError as e:
+        raise ImportError(f"RAG依存ライブラリの読み込みに失敗しました: {e}")
+
     google_api_key = getattr(settings, "GOOGLE_API_KEY", None)
     if not google_api_key:
         raise RuntimeError("GOOGLE_API_KEY が設定されていません")
