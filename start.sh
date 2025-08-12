@@ -27,6 +27,52 @@ except Exception as e:
     print(f"⚠️ ベクトルストア状態の取得に失敗: {e}")
 PY
 
+# ベクトルストアが無い場合、自動ダウンロード（GOOGLE_DRIVE_FILE_ID が設定されているとき）
+echo "🔄 ベクトルストア自動準備ロジック..."
+python - << 'PY'
+import os, sys, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
+django.setup()
+from main import rag_service
+status = rag_service._vectorstore_status()
+sys.exit(0 if status.get('exists') else 1)
+PY
+VECTORSTORE_EXISTS=$?
+if [ "$VECTORSTORE_EXISTS" -ne 0 ]; then
+  if [ -n "${GOOGLE_DRIVE_FILE_ID:-}" ]; then
+    echo "📥 ベクトルストア未検出。Google Drive からダウンロードします..."
+    if [ "${VECTORSTORE_FORCE_DOWNLOAD:-0}" = "1" ]; then
+      DL_FORCE=--force
+    else
+      DL_FORCE=
+    fi
+    if python -u manage.py download_vectorstore $DL_FORCE; then
+      echo "✅ ベクトルストアのダウンロード完了"
+    else
+      echo "❌ ベクトルストアのダウンロードに失敗"
+      if [ "${VECTORSTORE_REQUIRED:-0}" = "1" ]; then
+        echo "⛔ VECTORSTORE_REQUIRED=1 のため起動を中止します"
+        exit 1
+      fi
+    fi
+  else
+    echo "ℹ️ GOOGLE_DRIVE_FILE_ID が未設定のため自動ダウンロードをスキップします"
+  fi
+fi
+
+# ダウンロード後の最終状態を表示
+python - << 'PY'
+import os
+import django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
+django.setup()
+from main import rag_service
+try:
+    rag_service._vectorstore_status()
+except Exception as e:
+    print(f"⚠️ ベクトルストア状態の取得に失敗(2): {e}")
+PY
+
 # DB接続の事前チェック（どのDBを使うかと接続可否を表示）
 echo "🧪 DB接続プリフライトチェック..."
 python - << 'PY'
