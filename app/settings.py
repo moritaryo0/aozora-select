@@ -264,5 +264,6 @@ if not DEBUG:
         SECURE_PROXY_SSL_HEADER = None
 
 # ベクトルストア設定
-VECTOR_STORE_PATH = BASE_DIR / "RAG_test" / "aozora_faiss_index"
+_default_vector_store_path = BASE_DIR / "RAG_test" / "aozora_faiss_index"
+VECTOR_STORE_PATH = os.environ.get('VECTOR_STORE_PATH', str(_default_vector_store_path))
 GOOGLE_DRIVE_FILE_ID = os.environ.get('GOOGLE_DRIVE_FILE_ID', None)
