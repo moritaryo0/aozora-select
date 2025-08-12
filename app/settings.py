@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 from datetime import timedelta
+import dj_database_url
 
 try:
     from dotenv import load_dotenv
@@ -31,10 +32,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-jr)7*2(f8hb7jm(s&ocd))+)mrp17)1z_wn$w%v#50)xq9@vax')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# 環境変数 DEBUG が true/1 のときのみ True にする（デフォルト False）
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('1', 'true', 't', 'yes')
 
-# ALLOWED_HOSTS設定
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS設定（カンマ区切り環境変数に対応。未指定時はワイルドカード）
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 
 # Application definition
@@ -53,9 +55,13 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # CORS はできるだけ上位に配置
     'corsheaders.middleware.CorsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # 静的ファイル配信用
+    # セキュリティ関連は先頭付近
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise は SecurityMiddleware の直後
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    # 以降は標準の順番
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -99,6 +105,11 @@ if not DEBUG:
     CORS_ALLOWED_ORIGINS = [
         # デプロイ後にRailwayのURLを追加
     ]
+    # CSRF 許可オリジン（Django 4.2 はスキーム必須）
+    CSRF_TRUSTED_ORIGINS = os.environ.get(
+        'CSRF_TRUSTED_ORIGINS',
+        'https://*.railway.app'
+    ).split(',')
 
 ROOT_URLCONF = 'app.urls'
 
@@ -126,11 +137,13 @@ WSGI_APPLICATION = 'app.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 # データベース設定
+# DATABASE_URL があればそれを使用、なければ SQLite
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=(0 if DEBUG else 600),
+        ssl_require=False,
+    )
 }
 
 
