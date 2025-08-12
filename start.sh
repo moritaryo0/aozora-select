@@ -63,28 +63,12 @@ else
   fi
 
   # ダウンロード着手後に状態を一度だけ確認
-  echo "🧾 現在状態: path=$VECTOR_STORE_DIR exists=$([ -d "$VECTOR_STORE_DIR" ] && [ -n "$(find "$VECTOR_STORE_DIR" -type f -maxdepth 1 2>/dev/null | head -n1)" ] && echo true || echo false) files=$(find "$VECTOR_STORE_DIR" -type f 2>/dev/null | wc -l | tr -d ' ') size_kb=$(du -sk "$VECTOR_STORE_DIR" 2>/dev/null | awk '{print $1}')"
-fi
-if [ "$VECTORSTORE_EXISTS" -ne 0 ]; then
-  if [ -n "${GOOGLE_DRIVE_FILE_ID:-}" ]; then
-    echo "📥 ベクトルストア未検出。Google Drive からダウンロードします..."
-    if [ "${VECTORSTORE_FORCE_DOWNLOAD:-0}" = "1" ]; then
-      DL_FORCE=--force
-    else
-      DL_FORCE=
-    fi
-    if python -u manage.py download_vectorstore $DL_FORCE; then
-      echo "✅ ベクトルストアのダウンロード完了"
-    else
-      echo "❌ ベクトルストアのダウンロードに失敗"
-      if [ "${VECTORSTORE_REQUIRED:-0}" = "1" ]; then
-        echo "⛔ VECTORSTORE_REQUIRED=1 のため起動を中止します"
-        exit 1
-      fi
-    fi
-  else
-    echo "ℹ️ GOOGLE_DRIVE_FILE_ID が未設定のため自動ダウンロードをスキップします"
-  fi
+  files_count=$(find "$VECTOR_STORE_DIR" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')
+  if [ -z "$files_count" ]; then files_count=0; fi
+  if [ "$files_count" -gt 0 ]; then exists=true; else exists=false; fi
+  size_kb=$(du -sk "$VECTOR_STORE_DIR" 2>/dev/null | awk '{print $1}')
+  if [ -z "$size_kb" ]; then size_kb=0; fi
+  echo "🧾 現在状態: path=$VECTOR_STORE_DIR exists=$exists files=$files_count size_kb=$size_kb"
 fi
 
 # ここまでで Django を一切インポートしていないため、起動前クラッシュを回避
