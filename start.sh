@@ -13,45 +13,68 @@ echo "Python version: $(python --version)"
 echo "📦 依存関係確認中..."
 pip list | sed -n '1,50p'
 
-# ベクトルストアが無い場合、自動ダウンロード（GOOGLE_DRIVE_FILE_ID が設定されているとき）
 echo "🔄 ベクトルストア自動準備ロジック..."
-python - << 'PY'
-import os, sys, json
-import django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
-django.setup()
-from django.conf import settings
-
-path = str(getattr(settings, 'VECTOR_STORE_PATH'))
-def exists(p):
-    try:
-        import os
-        return os.path.isdir(p) and any(os.scandir(p))
-    except Exception:
-        return False
-
-def stats(p):
-    import os
-    total_files = 0
-    total_bytes = 0
-    for root, dirs, files in os.walk(p):
-        total_files += len(files)
-        for f in files:
-            fp = os.path.join(root, f)
-            try:
-                total_bytes += os.path.getsize(fp)
-            except OSError:
-                pass
-    return total_files, total_bytes
-
-e = exists(path)
-files = size = 0
-if e:
-    files, size = stats(path)
-print(json.dumps({"path": path, "exists": e, "files": files, "total_size_bytes": size}))
-sys.exit(0 if e else 1)
-PY
-VECTORSTORE_EXISTS=$?
+# Django を起動前にインポートしないため Bash で確認する
+VECTOR_STORE_DIR=${VECTOR_STORE_DIR:-/code/RAG_test/aozora_faiss_index}
+if [ "${SKIP_VECTORSTORE_BOOT:-0}" = "1" ]; then
+  echo "⏭️ SKIP_VECTORSTORE_BOOT=1 のためベクトルストア準備をスキップします"
+else
+  if [ -d "$VECTOR_STORE_DIR" ] && [ -n "$(find "$VECTOR_STORE_DIR" -type f -maxdepth 1 2>/dev/null | head -n1)" ]; then
+    EXISTS=0
+  else
+    EXISTS=1
+  fi
+  echo "🧾 事前状態: path=$VECTOR_STORE_DIR exists=$([ $EXISTS -eq 0 ] && echo true || echo false) files=$(find "$VECTOR_STORE_DIR" -type f 2>/dev/null | wc -l | tr -d ' ') size_kb=$(du -sk "$VECTOR_STORE_DIR" 2>/dev/null | awk '{print $1}')"
+  if [ $EXISTS -ne 0 ]; then
+    if [ -n "${GOOGLE_DRIVE_FILE_ID:-}" ]; then
+      echo "📥 ベクトルストア未検出。Google Drive からダウンロードします..."
+      if [ "${VECTORSTORE_FORCE_DOWNLOAD:-0}" = "1" ]; then
+        DL_FORCE=--force
+      else
+        DL_FORCE=
+      fi
+      REQUIRED=${VECTORSTORE_REQUIRED:-0}
+      BG=${VECTORSTORE_BACKGROUND:-1}
+      if [ "$REQUIRED" = "1" ]; then
+        echo "⏳ 必須モード: 完了まで待機します (VECTORSTORE_REQUIRED=1)"
+        if command -v timeout >/dev/null 2>&1; then
+          TO=${VECTORSTORE_DOWNLOAD_TIMEOUT:-600}
+          if timeout ${TO}s python -u manage.py download_vectorstore $DL_FORCE | sed -n '1,200p'; then
+            echo "✅ ベクトルストアのダウンロード完了"
+          else
+            echo "❌ ベクトルストアのダウンロードに失敗 (timeout=${TO}s)"
+            echo "⛔ 起動を中止します"
+            exit 1
+          fi
+        else
+          if python -u manage.py download_vectorstore $DL_FORCE | sed -n '1,200p'; then
+            echo "✅ ベクトルストアのダウンロード完了"
+          else
+            echo "❌ ベクトルストアのダウンロードに失敗"
+            echo "⛔ 起動を中止します"
+            exit 1
+          fi
+        fi
+      else
+        if [ "$BG" = "1" ]; then
+          echo "🚀 バックグラウンドでダウンロードを開始します (ログ: /code/vectorstore_download.log)"
+          nohup sh -c "python -u manage.py download_vectorstore $DL_FORCE >> /code/vectorstore_download.log 2>&1" >/dev/null 2>&1 &
+        else
+          echo "⏳ フォアグラウンドでダウンロードします (必要に応じて VECTORSTORE_BACKGROUND=1 を設定)"
+          if command -v timeout >/dev/null 2>&1; then
+            TO=${VECTORSTORE_DOWNLOAD_TIMEOUT:-600}
+            timeout ${TO}s python -u manage.py download_vectorstore $DL_FORCE | sed -n '1,200p' || echo "⚠️ ダウンロードが失敗またはタイムアウトしました"
+          else
+            python -u manage.py download_vectorstore $DL_FORCE | sed -n '1,200p' || echo "⚠️ ダウンロードが失敗しました"
+          fi
+        fi
+      fi
+    else
+      echo "ℹ️ GOOGLE_DRIVE_FILE_ID が未設定のため自動ダウンロードをスキップします"
+    fi
+  fi
+  echo "🧾 事後状態: path=$VECTOR_STORE_DIR exists=$([ -d "$VECTOR_STORE_DIR" ] && [ -n "$(find "$VECTOR_STORE_DIR" -type f -maxdepth 1 2>/dev/null | head -n1)" ] && echo true || echo false) files=$(find "$VECTOR_STORE_DIR" -type f 2>/dev/null | wc -l | tr -d ' ') size_kb=$(du -sk "$VECTOR_STORE_DIR" 2>/dev/null | awk '{print $1}')"
+fi
 if [ "$VECTORSTORE_EXISTS" -ne 0 ]; then
   if [ -n "${GOOGLE_DRIVE_FILE_ID:-}" ]; then
     echo "📥 ベクトルストア未検出。Google Drive からダウンロードします..."
@@ -74,42 +97,7 @@ if [ "$VECTORSTORE_EXISTS" -ne 0 ]; then
   fi
 fi
 
-# ダウンロード後の最終状態を表示
-python - << 'PY'
-import os, sys, json
-import django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
-django.setup()
-from django.conf import settings
-
-path = str(getattr(settings, 'VECTOR_STORE_PATH'))
-def exists(p):
-    try:
-        import os
-        return os.path.isdir(p) and any(os.scandir(p))
-    except Exception:
-        return False
-
-def stats(p):
-    import os
-    total_files = 0
-    total_bytes = 0
-    for root, dirs, files in os.walk(p):
-        total_files += len(files)
-        for f in files:
-            fp = os.path.join(root, f)
-            try:
-                total_bytes += os.path.getsize(fp)
-            except OSError:
-                pass
-    return total_files, total_bytes
-
-e = exists(path)
-files = size = 0
-if e:
-    files, size = stats(path)
-print(json.dumps({"path": path, "exists": e, "files": files, "total_size_bytes": size}))
-PY
+# ここまでで Django を一切インポートしていないため、起動前クラッシュを回避
 
 # DB接続の事前チェック（どのDBを使うかと接続可否を表示）
 echo "🧪 DB接続プリフライトチェック..."
