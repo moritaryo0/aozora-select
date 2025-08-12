@@ -13,29 +13,43 @@ echo "Python version: $(python --version)"
 echo "📦 依存関係確認中..."
 pip list | sed -n '1,50p'
 
-# ベクトルストアの状態を表示（RAG未使用でもログで可視化）
-echo "🧾 ベクトルストア状態チェック..."
-python - << 'PY'
-import os
-import django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
-django.setup()
-from main import rag_service
-try:
-    rag_service._vectorstore_status()
-except Exception as e:
-    print(f"⚠️ ベクトルストア状態の取得に失敗: {e}")
-PY
-
 # ベクトルストアが無い場合、自動ダウンロード（GOOGLE_DRIVE_FILE_ID が設定されているとき）
 echo "🔄 ベクトルストア自動準備ロジック..."
 python - << 'PY'
-import os, sys, django
+import os, sys, json
+import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
 django.setup()
-from main import rag_service
-status = rag_service._vectorstore_status()
-sys.exit(0 if status.get('exists') else 1)
+from django.conf import settings
+
+path = str(getattr(settings, 'VECTOR_STORE_PATH'))
+def exists(p):
+    try:
+        import os
+        return os.path.isdir(p) and any(os.scandir(p))
+    except Exception:
+        return False
+
+def stats(p):
+    import os
+    total_files = 0
+    total_bytes = 0
+    for root, dirs, files in os.walk(p):
+        total_files += len(files)
+        for f in files:
+            fp = os.path.join(root, f)
+            try:
+                total_bytes += os.path.getsize(fp)
+            except OSError:
+                pass
+    return total_files, total_bytes
+
+e = exists(path)
+files = size = 0
+if e:
+    files, size = stats(path)
+print(json.dumps({"path": path, "exists": e, "files": files, "total_size_bytes": size}))
+sys.exit(0 if e else 1)
 PY
 VECTORSTORE_EXISTS=$?
 if [ "$VECTORSTORE_EXISTS" -ne 0 ]; then
@@ -62,15 +76,39 @@ fi
 
 # ダウンロード後の最終状態を表示
 python - << 'PY'
-import os
+import os, sys, json
 import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
 django.setup()
-from main import rag_service
-try:
-    rag_service._vectorstore_status()
-except Exception as e:
-    print(f"⚠️ ベクトルストア状態の取得に失敗(2): {e}")
+from django.conf import settings
+
+path = str(getattr(settings, 'VECTOR_STORE_PATH'))
+def exists(p):
+    try:
+        import os
+        return os.path.isdir(p) and any(os.scandir(p))
+    except Exception:
+        return False
+
+def stats(p):
+    import os
+    total_files = 0
+    total_bytes = 0
+    for root, dirs, files in os.walk(p):
+        total_files += len(files)
+        for f in files:
+            fp = os.path.join(root, f)
+            try:
+                total_bytes += os.path.getsize(fp)
+            except OSError:
+                pass
+    return total_files, total_bytes
+
+e = exists(path)
+files = size = 0
+if e:
+    files, size = stats(path)
+print(json.dumps({"path": path, "exists": e, "files": files, "total_size_bytes": size}))
 PY
 
 # DB接続の事前チェック（どのDBを使うかと接続可否を表示）
