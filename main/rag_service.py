@@ -4,6 +4,7 @@ import threading
 from typing import Optional
 
 from django.conf import settings
+from django.core.management import call_command
 
 # イベントループの問題を回避するための設定
 os.environ["LANGCHAIN_TRACING_V2"] = "false"
@@ -19,6 +20,64 @@ from langchain_core.output_parsers import StrOutputParser
 _rag_lock = threading.Lock()
 _rag_ready = False
 _rag_chain = None
+
+
+def _vector_store_exists(path: str) -> bool:
+    try:
+        return os.path.isdir(path) and any(os.scandir(path))
+    except FileNotFoundError:
+        return False
+    except Exception:
+        return False
+
+
+def _directory_stats(path: str) -> dict:
+    total_files = 0
+    total_bytes = 0
+    try:
+        for root, dirs, files in os.walk(path):
+            total_files += len(files)
+            for f in files:
+                fp = os.path.join(root, f)
+                try:
+                    total_bytes += os.path.getsize(fp)
+                except OSError:
+                    pass
+    except Exception:
+        pass
+    return {"files": total_files, "bytes": total_bytes}
+
+
+def _vectorstore_status() -> dict:
+    path = _default_vector_store_path()
+    exists = _vector_store_exists(path)
+    stats = _directory_stats(path) if exists else {"files": 0, "bytes": 0}
+    status = {
+        "path": path,
+        "exists": exists,
+        "files": stats["files"],
+        "total_size_bytes": stats["bytes"],
+    }
+    print(f"🧾 ベクトルストア状態: {status}")
+    return status
+
+
+def _ensure_vectorstore_exists(force: bool = False) -> dict:
+    """存在しない場合に管理コマンドでダウンロード。ログと状態を返す。"""
+    status = _vectorstore_status()
+    if status["exists"] and not force:
+        print("✅ ベクトルストアは既に存在します。ダウンロードはスキップします。")
+        status["downloaded"] = False
+        return status
+    try:
+        print("📥 ベクトルストアを管理コマンドでダウンロードします…")
+        call_command('download_vectorstore', force=force)
+        new_status = _vectorstore_status()
+        new_status["downloaded"] = True
+        return new_status
+    except Exception as e:
+        print(f"❌ ベクトルストアのダウンロードに失敗しました: {e}")
+        return {"error": str(e), "downloaded": False, **status}
 
 
 def _default_vector_store_path() -> str:
@@ -37,8 +96,9 @@ def _build_rag_chain():
     vector_store_path = _default_vector_store_path()
 
     print(f"🔍 ベクターストアパス確認: {vector_store_path}")
-    if not os.path.exists(vector_store_path):
-        raise FileNotFoundError(f"ベクターストアが見つかりません: {vector_store_path}")
+    status = _vectorstore_status()
+    if not status["exists"]:
+        raise FileNotFoundError(f"ベクトルストアが見つかりません: {vector_store_path}")
 
     # 新しいイベントループを設定（初期化時のみ）
     try:
@@ -208,6 +268,9 @@ def ensure_rag_ready():
                     _rag_ready = True
                     return
                 
+                # ベクトルストアの状態をログ
+                _vectorstore_status()
+
                 _rag_chain = _build_rag_chain()
                 _rag_ready = True
                 print("✅ RAGシステム初期化完了")

@@ -222,7 +222,7 @@ def admin_download_vectorstore(request):
         # 現在は存在しない場合の取得に対応
         vector_store_path = rag_service._default_vector_store_path()
         before_exists = os.path.exists(vector_store_path)
-        rag_service._ensure_vectorstore_exists()
+        status = rag_service._ensure_vectorstore_exists(force=request.GET.get('force') == '1')
         after_exists = os.path.exists(vector_store_path)
 
         files = []
@@ -238,6 +238,7 @@ def admin_download_vectorstore(request):
             'existed_before': before_exists,
             'exists_now': after_exists,
             'files': files,
+            'status': status,
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)

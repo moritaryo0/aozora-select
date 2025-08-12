@@ -13,6 +13,20 @@ echo "Python version: $(python --version)"
 echo "📦 依存関係確認中..."
 pip list | sed -n '1,50p'
 
+# ベクトルストアの状態を表示（RAG未使用でもログで可視化）
+echo "🧾 ベクトルストア状態チェック..."
+python - << 'PY'
+import os
+import django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
+django.setup()
+from main import rag_service
+try:
+    rag_service._vectorstore_status()
+except Exception as e:
+    print(f"⚠️ ベクトルストア状態の取得に失敗: {e}")
+PY
+
 # DB接続の事前チェック（どのDBを使うかと接続可否を表示）
 echo "🧪 DB接続プリフライトチェック..."
 python - << 'PY'
