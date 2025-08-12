@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # Railway起動スクリプト
-set -euo pipefail
+# nounset(-u) は古い変数参照で落ちやすいため無効化
+set -eo pipefail
 
-echo "🚀 Railway起動スクリプト開始"
+echo "🚀 Railway起動スクリプト開始 (start.sh rev: v2025-08-12-01)"
 echo "PORT: ${PORT:-8000}"
 echo "RAILWAY_ENVIRONMENT: ${RAILWAY_ENVIRONMENT:-not set}"
 echo "PWD: $(pwd)"
@@ -14,66 +15,55 @@ echo "📦 依存関係確認中..."
 pip list | sed -n '1,50p'
 
 echo "🔄 ベクトルストア自動準備ロジック..."
-# Django を起動前にインポートしないため Bash で確認する
 VECTOR_STORE_DIR=${VECTOR_STORE_DIR:-/code/RAG_test/aozora_faiss_index}
 if [ "${SKIP_VECTORSTORE_BOOT:-0}" = "1" ]; then
   echo "⏭️ SKIP_VECTORSTORE_BOOT=1 のためベクトルストア準備をスキップします"
 else
-  if [ -d "$VECTOR_STORE_DIR" ] && [ -n "$(find "$VECTOR_STORE_DIR" -type f -maxdepth 1 2>/dev/null | head -n1)" ]; then
-    EXISTS=0
-  else
-    EXISTS=1
-  fi
-  echo "🧾 事前状態: path=$VECTOR_STORE_DIR exists=$([ $EXISTS -eq 0 ] && echo true || echo false) files=$(find "$VECTOR_STORE_DIR" -type f 2>/dev/null | wc -l | tr -d ' ') size_kb=$(du -sk "$VECTOR_STORE_DIR" 2>/dev/null | awk '{print $1}')"
-  if [ $EXISTS -ne 0 ]; then
-    if [ -n "${GOOGLE_DRIVE_FILE_ID:-}" ]; then
-      echo "📥 ベクトルストア未検出。Google Drive からダウンロードします..."
-      if [ "${VECTORSTORE_FORCE_DOWNLOAD:-0}" = "1" ]; then
-        DL_FORCE=--force
-      else
-        DL_FORCE=
-      fi
-      REQUIRED=${VECTORSTORE_REQUIRED:-0}
-      BG=${VECTORSTORE_BACKGROUND:-1}
-      if [ "$REQUIRED" = "1" ]; then
-        echo "⏳ 必須モード: 完了まで待機します (VECTORSTORE_REQUIRED=1)"
-        if command -v timeout >/dev/null 2>&1; then
-          TO=${VECTORSTORE_DOWNLOAD_TIMEOUT:-600}
-          if timeout ${TO}s python -u manage.py download_vectorstore $DL_FORCE | sed -n '1,200p'; then
-            echo "✅ ベクトルストアのダウンロード完了"
-          else
-            echo "❌ ベクトルストアのダウンロードに失敗 (timeout=${TO}s)"
-            echo "⛔ 起動を中止します"
-            exit 1
-          fi
+  if [ -n "${GOOGLE_DRIVE_FILE_ID:-}" ]; then
+    # 先にダウンロードを開始（要求どおり、状態確認より前に着手）
+    if [ "${VECTORSTORE_FORCE_DOWNLOAD:-0}" = "1" ]; then DL_FORCE=--force; else DL_FORCE=; fi
+    REQUIRED=${VECTORSTORE_REQUIRED:-0}
+    BG=${VECTORSTORE_BACKGROUND:-1}
+    if [ "$REQUIRED" = "1" ]; then
+      echo "⏳ 必須モード: ベクトルストアを先に取得します (待機)"
+      if command -v timeout >/dev/null 2>&1; then
+        TO=${VECTORSTORE_DOWNLOAD_TIMEOUT:-600}
+        if timeout ${TO}s python -u manage.py download_vectorstore $DL_FORCE | sed -n '1,200p'; then
+          echo "✅ ベクトルストアのダウンロード完了"
         else
-          if python -u manage.py download_vectorstore $DL_FORCE | sed -n '1,200p'; then
-            echo "✅ ベクトルストアのダウンロード完了"
-          else
-            echo "❌ ベクトルストアのダウンロードに失敗"
-            echo "⛔ 起動を中止します"
-            exit 1
-          fi
+          echo "❌ ベクトルストアのダウンロードに失敗 (timeout=${TO}s)"
+          echo "⛔ 起動を中止します"
+          exit 1
         fi
       else
-        if [ "$BG" = "1" ]; then
-          echo "🚀 バックグラウンドでダウンロードを開始します (ログ: /code/vectorstore_download.log)"
-          nohup sh -c "python -u manage.py download_vectorstore $DL_FORCE >> /code/vectorstore_download.log 2>&1" >/dev/null 2>&1 &
+        if python -u manage.py download_vectorstore $DL_FORCE | sed -n '1,200p'; then
+          echo "✅ ベクトルストアのダウンロード完了"
         else
-          echo "⏳ フォアグラウンドでダウンロードします (必要に応じて VECTORSTORE_BACKGROUND=1 を設定)"
-          if command -v timeout >/dev/null 2>&1; then
-            TO=${VECTORSTORE_DOWNLOAD_TIMEOUT:-600}
-            timeout ${TO}s python -u manage.py download_vectorstore $DL_FORCE | sed -n '1,200p' || echo "⚠️ ダウンロードが失敗またはタイムアウトしました"
-          else
-            python -u manage.py download_vectorstore $DL_FORCE | sed -n '1,200p' || echo "⚠️ ダウンロードが失敗しました"
-          fi
+          echo "❌ ベクトルストアのダウンロードに失敗"
+          echo "⛔ 起動を中止します"
+          exit 1
         fi
       fi
     else
-      echo "ℹ️ GOOGLE_DRIVE_FILE_ID が未設定のため自動ダウンロードをスキップします"
+      if [ "$BG" = "1" ]; then
+        echo "🚀 先行してバックグラウンドDLを開始 (ログ: /code/vectorstore_download.log)"
+        nohup sh -c "python -u manage.py download_vectorstore $DL_FORCE >> /code/vectorstore_download.log 2>&1" >/dev/null 2>&1 &
+      else
+        echo "⏳ 先にフォアグラウンドDLを実施します"
+        if command -v timeout >/dev/null 2>&1; then
+          TO=${VECTORSTORE_DOWNLOAD_TIMEOUT:-600}
+          timeout ${TO}s python -u manage.py download_vectorstore $DL_FORCE | sed -n '1,200p' || echo "⚠️ ダウンロードが失敗またはタイムアウトしました"
+        else
+          python -u manage.py download_vectorstore $DL_FORCE | sed -n '1,200p' || echo "⚠️ ダウンロードが失敗しました"
+        fi
+      fi
     fi
+  else
+    echo "ℹ️ GOOGLE_DRIVE_FILE_ID が未設定のため自動ダウンロードをスキップします"
   fi
-  echo "🧾 事後状態: path=$VECTOR_STORE_DIR exists=$([ -d "$VECTOR_STORE_DIR" ] && [ -n "$(find "$VECTOR_STORE_DIR" -type f -maxdepth 1 2>/dev/null | head -n1)" ] && echo true || echo false) files=$(find "$VECTOR_STORE_DIR" -type f 2>/dev/null | wc -l | tr -d ' ') size_kb=$(du -sk "$VECTOR_STORE_DIR" 2>/dev/null | awk '{print $1}')"
+
+  # ダウンロード着手後に状態を一度だけ確認
+  echo "🧾 現在状態: path=$VECTOR_STORE_DIR exists=$([ -d "$VECTOR_STORE_DIR" ] && [ -n "$(find "$VECTOR_STORE_DIR" -type f -maxdepth 1 2>/dev/null | head -n1)" ] && echo true || echo false) files=$(find "$VECTOR_STORE_DIR" -type f 2>/dev/null | wc -l | tr -d ' ') size_kb=$(du -sk "$VECTOR_STORE_DIR" 2>/dev/null | awk '{print $1}')"
 fi
 if [ "$VECTORSTORE_EXISTS" -ne 0 ]; then
   if [ -n "${GOOGLE_DRIVE_FILE_ID:-}" ]; then
