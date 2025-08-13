@@ -6,6 +6,7 @@
     <title>青空セレクト</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
         :root {
             /* Material Design 3 Color System - Light Mode */
@@ -481,6 +482,80 @@
             border-radius: 16px;
             padding: 24px;
             margin-top: 24px;
+            position: relative;
+        }
+
+        .result-card-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 8px;
+            z-index: 2;
+        }
+
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            background: var(--md-surface);
+            color: var(--md-on-surface-variant);
+            border: 1px solid var(--md-outline-variant);
+            cursor: pointer;
+        }
+        .icon-btn:hover {
+            background: var(--md-surface-variant);
+            color: var(--md-on-surface);
+        }
+
+        /* Tabs for recommendation history */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .tab-btn {
+            background: var(--md-surface-variant);
+            color: var(--md-on-surface-variant);
+            border: 1px solid var(--md-outline-variant);
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .tab-btn.active {
+            background: var(--md-secondary-container);
+            color: var(--md-on-secondary-container);
+            border-color: var(--md-secondary);
+        }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* Slider nav (mobile) */
+        .slider-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0 12px;
+        }
+        .slider-btn {
+            background: var(--md-surface-variant);
+            color: var(--md-on-surface-variant);
+            border: 1px solid var(--md-outline-variant);
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .slider-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
         .loading-spinner {
@@ -678,7 +753,7 @@
                             <div id="recommendationSettings">
                                 <div style="text-align: center;">
                                     <button class="btn-primary" id="getRecommendationBtn" onclick="handleRecommendationRequest()">
-                                        📚 <span id="mainButtonText">おすすめの本を探す</span>
+                                        <i class="bi bi-book"></i> <span id="mainButtonText">おすすめの本を探す</span>
                                     </button>
                                     <div style="margin-top: 16px; font-size: 14px; color: var(--md-on-surface-variant);">
                                     </div>
@@ -687,6 +762,15 @@
 
                             <!-- 推薦結果表示エリア -->
                             <div id="recommendationResults" style="display: none;">
+                                <!-- 履歴タブヘッダ -->
+                                <div id="recommendationTabs" class="tabs" style="display:none;"></div>
+                                <!-- スマホ用スライダー操作 -->
+                                <div id="recommendationSliderNav" class="slider-nav" style="display:none;">
+                                    <button class="slider-btn" id="slidePrev" onclick="prevRecommendation()"><i class="bi bi-chevron-left"></i></button>
+                                    <button class="slider-btn" id="slideNext" onclick="nextRecommendation()"><i class="bi bi-chevron-right"></i></button>
+                                </div>
+                                <!-- 履歴タブ内容 -->
+                                <div id="recommendationTabPanes"></div>
                                 <!-- ローディング -->
                                 <div id="recommendationLoading" class="result-card" style="
                                     text-align: center; 
@@ -703,8 +787,13 @@
                                     <!-- AI版結果 -->
                                     <div id="aiRecommendationResult">
                                         <div class="result-card">
+                            <div class="result-card-actions">
+                                <button class="icon-btn" title="高評価(Like)" onclick="event.stopPropagation();"><span>👍</span></button>
+                                <button class="icon-btn" title="低評価(Dislike)" onclick="event.stopPropagation();"><span>👎</span></button>
+                                <button class="icon-btn" title="共有(Share)" onclick="event.stopPropagation();"><span>🔗</span></button>
+                            </div>
                                             <div style="text-align: center; margin-bottom: 20px;">
-                                                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">🤖 AI推薦作品</h3>
+                                                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">AI推薦作品</h3>
                                                 <div id="aiModelInfo" style="
                                                     font-size: 0.9rem; 
                                                     opacity: 0.8; 
@@ -740,8 +829,8 @@
                                             <div style="font-size: 2rem; margin-bottom: 15px;">😔</div>
                                             <h3 style="margin-bottom: 10px;">推薦取得エラー</h3>
                                             <p id="recommendationErrorMessage" style="opacity: 0.9; margin-bottom: 15px;"></p>
-                                            <button class="btn-secondary" onclick="getBookRecommendation()">
-                                                🔄 再試行
+                                    <button class="btn-secondary" onclick="getBookRecommendation()">
+                                                <i class="bi bi-arrow-clockwise"></i> 再試行
                                             </button>
                                         </div>
                                     </div>
@@ -761,6 +850,9 @@
                                 <div>{{ weather_data.weather_description }}</div>
                             </div>
                             {% endif %}
+                             <div style="margin-top: 16px; text-align: center;">
+                                 <button class="btn-secondary" onclick="retryWeather()"><i class="bi bi-arrow-clockwise"></i> 再試行</button>
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -911,6 +1003,20 @@
             if (weatherError) weatherError.style.display = 'block';
         }
 
+        // 位置情報の再試行
+        function retryWeather() {
+            const weatherLoading = document.getElementById('weatherLoading');
+            const weatherContent = document.getElementById('weatherContent');
+            const weatherError = document.getElementById('weatherError');
+            
+            if (weatherError) weatherError.style.display = 'none';
+            if (weatherContent) weatherContent.style.display = 'none';
+            if (weatherLoading) weatherLoading.style.display = 'block';
+            
+            // 再試行
+            loadWeatherData();
+        }
+
 
 
 
@@ -981,6 +1087,7 @@
         let currentLocation = null;
         let lastRecommendation = null; // 直前の推薦作品を記録
         let excludedRecommendations = []; // 除外する作品のリスト
+        let recommendationHistory = []; // 履歴: { id, timestamp, text, model }
 
         // 統合推薦システム用の関数（推薦モード選択は削除）
 
@@ -998,6 +1105,9 @@
             const originalText = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '🔍 推薦中...';
+
+            // 直前の結果を履歴に退避
+            archiveLastRecommendation();
 
             // UI状態をリセット
             hideAllRecommendationSections();
@@ -1033,6 +1143,8 @@
                 
                 if (data.success) {
                     showRecommendationResult(data, true);
+                    // 最新結果を lastRecommendation に保存済みなので、履歴タブを更新
+                    renderRecommendationHistoryTabs();
                 } else {
                     showRecommendationError(data.message || '推薦の取得に失敗しました');
                 }
@@ -1051,6 +1163,147 @@
                     btn.innerHTML = originalText;
                 }
             }
+        }
+
+        // 直前の結果を履歴に保存（重複タイトルは追加しない）
+        function archiveLastRecommendation() {
+            try {
+                const aiRecommendationText = document.getElementById('aiRecommendationText');
+                if (!aiRecommendationText) return;
+                const text = aiRecommendationText.innerText || aiRecommendationText.textContent || '';
+                if (!text || !text.trim()) return;
+                const title = extractBookTitle(text) || (text.split('\n')[0] || '').slice(0, 20) || '作品';
+
+                // 直前が同じタイトルまたは同じ本文ならスキップ
+                if (recommendationHistory.length > 0) {
+                    const head = recommendationHistory[0];
+                    if ((head.title && head.title === title) || (head.text && head.text === text)) {
+                        renderRecommendationHistoryTabs();
+                        return;
+                    }
+                }
+
+                const id = Date.now().toString();
+                recommendationHistory.unshift({ id, title, text, model: '統合AI推薦' });
+                // タイトル重複を除去（先頭優先）
+                const seen = new Set();
+                recommendationHistory = recommendationHistory.filter(item => {
+                    const key = item.title || item.text;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                }).slice(0, 5);
+                renderRecommendationHistoryTabs();
+            } catch (e) {
+                console.warn('履歴保存に失敗:', e);
+            }
+        }
+
+        function renderRecommendationHistoryTabs() {
+            const tabs = document.getElementById('recommendationTabs');
+            const panes = document.getElementById('recommendationTabPanes');
+            const sliderNav = document.getElementById('recommendationSliderNav');
+            if (!tabs || !panes) return;
+
+            if (recommendationHistory.length === 0) {
+                tabs.style.display = 'none';
+                tabs.innerHTML = '';
+                panes.innerHTML = '';
+                if (sliderNav) sliderNav.style.display = 'none';
+                return;
+            }
+
+            tabs.style.display = 'flex';
+            tabs.innerHTML = '';
+            panes.innerHTML = '';
+            if (sliderNav) sliderNav.style.display = (window.innerWidth <= 768) ? 'flex' : 'none';
+
+            recommendationHistory.forEach((item, index) => {
+                const btn = document.createElement('a');
+                btn.className = 'tab-btn' + (index === 0 ? ' active' : '');
+                const label = (item.title && item.title.trim()) ? item.title.trim() : `作品${index + 1}`;
+                // 検索リンクを生成
+                const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(label + ' 青空文庫')}`;
+                btn.href = searchUrl;
+                btn.target = '_blank';
+                btn.rel = 'noopener noreferrer';
+                btn.textContent = label;
+                // タブ切替のクリックは修飾キーなしの通常クリックのみ反応
+                btn.addEventListener('click', (e) => {
+                    const isModified = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
+                    if (!isModified) {
+                        e.preventDefault();
+                        activateTab(index);
+                        scrollActiveTabIntoView();
+                    }
+                });
+                tabs.appendChild(btn);
+
+                const pane = document.createElement('div');
+                pane.className = 'tab-pane' + (index === 0 ? ' active' : '');
+                const linked = addAozoraLinks(item.text || '');
+                pane.innerHTML = `
+                    <div class="result-card">
+                        <div class="result-card-actions">
+                            <button class="icon-btn" title="高評価(Like)" onclick="event.stopPropagation();"><i class="bi bi-hand-thumbs-up"></i></button>
+                            <button class="icon-btn" title="低評価(Dislike)" onclick="event.stopPropagation();"><i class="bi bi-hand-thumbs-down"></i></button>
+                            <button class="icon-btn" title="共有(Share)" onclick="event.stopPropagation();"><i class="bi bi-share"></i></button>
+                        </div>
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <h3 style="font-size: 1.5rem; margin-bottom: 10px;">AI推薦作品</h3>
+                            <div style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 10px; color: var(--md-primary);">${item.model || ''}</div>
+                        </div>
+                        <div style="font-size: 1.05rem; line-height: 1.8; white-space: pre-line; background: rgba(255,255,255,0.05); padding: 25px; border-radius: 15px; border-left: 4px solid rgba(255,255,255,0.3);">${linked}</div>
+                    </div>
+                `;
+                panes.appendChild(pane);
+            });
+        }
+
+        function prevRecommendation() {
+            const tabs = document.querySelectorAll('#recommendationTabs .tab-btn');
+            let active = 0;
+            tabs.forEach((t, i) => { if (t.classList.contains('active')) active = i; });
+            const nextIndex = Math.min(Math.max(active - 1, 0), recommendationHistory.length - 1);
+            activateTab(nextIndex);
+            scrollActiveTabIntoView();
+        }
+
+        function nextRecommendation() {
+            const tabs = document.querySelectorAll('#recommendationTabs .tab-btn');
+            let active = 0;
+            tabs.forEach((t, i) => { if (t.classList.contains('active')) active = i; });
+            const nextIndex = Math.min(active + 1, recommendationHistory.length - 1);
+            activateTab(nextIndex);
+            scrollActiveTabIntoView();
+        }
+
+        function scrollActiveTabIntoView() {
+            const tabsContainer = document.getElementById('recommendationTabs');
+            const activeBtn = document.querySelector('#recommendationTabs .tab-btn.active');
+            if (tabsContainer && activeBtn) {
+                const containerRect = tabsContainer.getBoundingClientRect();
+                const btnRect = activeBtn.getBoundingClientRect();
+                if (btnRect.left < containerRect.left || btnRect.right > containerRect.right) {
+                    activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            }
+        }
+
+        function activateTab(activeIndex) {
+            const tabs = document.querySelectorAll('#recommendationTabs .tab-btn');
+            const panes = document.querySelectorAll('#recommendationTabPanes .tab-pane');
+            tabs.forEach((t, i) => t.classList.toggle('active', i === activeIndex));
+            panes.forEach((p, i) => p.classList.toggle('active', i === activeIndex));
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         // 現在位置を取得
@@ -1104,31 +1357,47 @@
             const recommendationContent = document.getElementById('recommendationContent');
             const aiRecommendationText = document.getElementById('aiRecommendationText');
             const modelInfo = document.getElementById('aiModelInfo');
-            
-            if (recommendationContent) {
-                recommendationContent.style.display = 'block';
-            }
-            
-            if (aiRecommendationText && data.recommendation) {
-                // 作品名をリンク付きで表示
-                const linkedRecommendation = addAozoraLinks(data.recommendation);
-                aiRecommendationText.innerHTML = linkedRecommendation;
-                
+
+            // 新着結果はタブ側に統合
+            if (data.recommendation) {
                 // 直前の推薦作品を記録
                 lastRecommendation = data.recommendation;
-                
-                // 作品名を抽出して除外リストに追加
+
+                // 除外リスト更新
                 const bookTitle = extractBookTitle(data.recommendation);
                 if (bookTitle && !excludedRecommendations.includes(bookTitle)) {
                     excludedRecommendations.push(bookTitle);
-                    console.log(`📚 除外リストに追加: ${bookTitle} (合計: ${excludedRecommendations.length}件)`);
-                    // ボタンテキストを更新（遅延実行で確実に）
-                    setTimeout(() => {
-                        updateMainButtonText();
-                    }, 100);
+                    setTimeout(() => { updateMainButtonText(); }, 100);
                 }
+
+                // 最新結果を履歴の0件目として追加（タイトル抽出・重複排除）
+                const id = Date.now().toString();
+                const title = bookTitle || (data.recommendation.split('\n')[0] || '').slice(0, 20) || '作品';
+                if (recommendationHistory.length > 0) {
+                    const head = recommendationHistory[0];
+                    if ((head.title && head.title === title) || (head.text && head.text === data.recommendation)) {
+                        recommendationHistory[0] = { id, title, text: data.recommendation, model: '統合AI推薦' };
+                    } else {
+                        recommendationHistory.unshift({ id, title, text: data.recommendation, model: '統合AI推薦' });
+                    }
+                } else {
+                    recommendationHistory.unshift({ id, title, text: data.recommendation, model: '統合AI推薦' });
+                }
+                const seen = new Set();
+                recommendationHistory = recommendationHistory.filter(item => {
+                    const key = item.title || item.text;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                }).slice(0, 5);
+
+                // タブを再描画（0件目=最新をアクティブ）
+                renderRecommendationHistoryTabs();
+
+                // 独立表示を隠し、タブ表示に統一
+                if (recommendationContent) recommendationContent.style.display = 'none';
             }
-            
+
             if (modelInfo) {
                 modelInfo.textContent = '🌟 統合AI推薦 (天気×RAG×季節感)';
             }
@@ -1378,6 +1647,22 @@
                 font-size: 0.8rem;
                 padding: 6px 10px;
             }
+
+            /* モバイルではタブは横スクロール風のスライドUIに */
+            .tabs {
+                overflow-x: auto;
+                white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+            .tabs .tab-btn {
+                display: inline-block;
+                white-space: nowrap;
+                max-width: 70vw;
+                text-overflow: ellipsis;
+                overflow: hidden;
+            }
+            .slider-nav { display: flex !important; }
         }
     </style>
 </body>

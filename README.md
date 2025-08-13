@@ -4,24 +4,24 @@
 
 青空セレクトは、位置情報と天気情報に基づいて青空文庫から最適な短編小説を推薦するWebアプリケーションです。
 
-## ✨ 主な機能
+##  主な機能
 
-### 🌤️ **天気連動推薦システム**
+###  **天気連動推薦システム**
 - リアルタイムの位置情報と天気データを取得
 - 天気・季節・時間帯に応じた作品推薦
 - AI（Google Gemini）とシンプル推薦の2つのモード
 
-### 📚 **青空文庫との連携**
+###  **青空文庫との連携**
 - 青空文庫の豊富な短編作品ライブラリ
 - 作品の本文プレビュー機能
 - 人気作品ランキング表示
 
-### 🎨 **モダンなUI/UX**
+###  **モダンなUI/UX**
 - Material Design 3 準拠のデザイン
 - ダークモード対応
 - レスポンシブデザイン（モバイル対応）
 
-## 🚀 技術スタック
+##  技術スタック
 
 - **Backend**: Django 4.2.7 + Django REST Framework
 - **Frontend**: HTML/CSS/JavaScript（Material Design 3）
@@ -30,7 +30,7 @@
 - **天気API**: OpenWeatherMap API
 - **Deploy**: Railway
 
-## 🏃‍♂️ クイックスタート
+##  クイックスタート
 
 ### 1. リポジトリのクローン
 ```bash
@@ -50,7 +50,7 @@ cp .env.example .env
 
 ### 3. 開発方法の選択
 
-#### 🐳 **Docker での開発（推奨）**
+####  **Docker での開発（推奨）**
 ```bash
 # Dockerコンテナを起動
 docker-compose up -d
@@ -67,7 +67,7 @@ docker-compose exec aozora-short-test python manage.py migrate
 
 http://localhost:8001 でアプリケーションにアクセスできます。
 
-#### 🐍 **ローカル環境での開発**
+#### **ローカル環境での開発**
 ```bash
 # 仮想環境の作成
 python -m venv venv
@@ -92,7 +92,7 @@ python manage.py runserver
 
 http://localhost:8000 でアプリケーションにアクセスできます。
 
-## 🔧 環境変数
+##  環境変数
 
 `.env.example`をコピーして`.env`を作成し、以下の値を設定してください：
 
@@ -116,11 +116,11 @@ GOOGLE_API_KEY=your-google-api-key
 1. **位置情報の許可**: ブラウザで位置情報の使用を許可
 2. **天気情報の表示**: 現在地の天気が自動表示
 3. **推薦モードの選択**: 
-   - ⚡ シンプル版：ルールベースの高速推薦
-   - 🧠 AI版：Google Geminiによる詳細な推薦
+   -  シンプル版：ルールベースの高速推薦
+   - AI版：Google Geminiによる詳細な推薦
 4. **作品の取得**: 「今すぐ作品を推薦してもらう」ボタンをクリック
 
-## 🌐 デプロイ
+##  デプロイ
 
 ### Railway での本番デプロイ
 
@@ -136,7 +136,7 @@ GOOGLE_API_KEY=your-google-api-key
    ```
 4. 自動デプロイが開始されます
 
-## 🔮 今後の予定
+##  今後の予定
 
 - [ ] ユーザー認証とお気に入り機能
 - [ ] 読書履歴の記録
@@ -145,15 +145,15 @@ GOOGLE_API_KEY=your-google-api-key
 - [ ] パーソナライズド推薦
 - [ ] 自作小説投稿機能
 
-## 🤝 開発に参加
+##  開発に参加
 
 プルリクエストやIssueは大歓迎です！
 
-## 📄 ライセンス
+##  ライセンス
 
 このプロジェクトはMITライセンスの下で公開されています。
 
-## 🙏 クレジット
+##  クレジット
 
 - [青空文庫](https://www.aozora.gr.jp/): 作品データの提供
 - [OpenWeatherMap](https://openweathermap.org/): 天気情報API

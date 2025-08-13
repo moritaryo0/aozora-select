@@ -76,7 +76,6 @@ def create_weather_rag_prompt(weather_info, location_name="現在地", exclude_t
 {f"【重要】以下の作品は除外してください(空の場合は無視)：{exclude_text}" if exclude_text else ""}
 
 条件：
-- 誰もが知っているような超有名作品は避けてください
 - 現在の天気や季節感、時間帯にマッチする作品
 - 短時間で読み切れる短編や中編
 - 読後感が今の気分や環境に合う作品
