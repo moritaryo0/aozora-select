@@ -208,6 +208,8 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # ログ設定
+# 本番ではINFOに落とし、開発時はDEBUG。環境変数LOG_LEVELで上書き可。
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO').upper()
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -218,12 +220,18 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'DEBUG',
+        'level': LOG_LEVEL,
     },
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        # autoreloadの詳細ログを抑制
+        'django.utils.autoreload': {
+            'handlers': ['console'],
+            'level': os.environ.get('AUTORELOAD_LOG_LEVEL', 'WARNING').upper(),
             'propagate': False,
         },
     },

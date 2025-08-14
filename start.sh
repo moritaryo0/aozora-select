@@ -110,6 +110,6 @@ echo "📁 静的ファイル収集中..."
 python -u manage.py collectstatic --noinput --verbosity 1
 
 # アプリケーション起動
-echo "🌐 Djangoサーバー起動中..."
+echo "🌐 Djangoサーバー起動中... (autoreload 無効化)"
 echo "ポート: ${PORT:-8000}"
-python -u manage.py runserver 0.0.0.0:${PORT:-8000}
+python -u manage.py runserver --noreload 0.0.0.0:${PORT:-8000}

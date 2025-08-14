@@ -515,6 +515,28 @@ def integrated_recommendation_api(request):
         lat = float(request.GET.get('lat', 35.681236))
         lon = float(request.GET.get('lon', 139.767125))
         exclude_text = request.GET.get('exclude', None)
+        # ページ読み込み時に取得済みの天気情報をフロントから受け取る（JSON文字列またはキーを個別に）
+        weather_info_json = request.GET.get('weather_info')
+        weather_info_override = None
+        if weather_info_json:
+            import json
+            try:
+                weather_info_override = json.loads(weather_info_json)
+            except Exception:
+                weather_info_override = None
+        else:
+            # 個別キーの場合
+            wi_keys = ['city_name','temperature','feels_like','humidity','weather_main','weather_description','weather_icon']
+            tmp = {k: request.GET.get(k) for k in wi_keys if request.GET.get(k) is not None}
+            if tmp:
+                # 数値っぽいものは数値に
+                for nk in ['temperature','feels_like','humidity']:
+                    if nk in tmp:
+                        try:
+                            tmp[nk] = float(tmp[nk])
+                        except Exception:
+                            pass
+                weather_info_override = tmp
         
         print(f"🌟 統合推薦API呼び出し: lat={lat}, lon={lon}, exclude={exclude_text}")
         
@@ -526,7 +548,8 @@ def integrated_recommendation_api(request):
             lat=lat, 
             lon=lon, 
             openweather_api_key=openweather_api_key,
-            exclude_text=exclude_text
+            exclude_text=exclude_text,
+            weather_info_override=weather_info_override
         )
         
         if result['success']:

@@ -1123,13 +1123,22 @@
                     currentLocation = await getCurrentLocation();
                 }
                 
-                // 統合推薦APIを呼び出し（除外リストがある場合はクエリパラメータに追加）
+                // 統合推薦APIを呼び出し（除外リストや天気情報を渡す）
                 let url = `/api/integrated-recommend/?lat=${currentLocation.lat}&lon=${currentLocation.lon}`;
                 if (excludedRecommendations.length > 0) {
                     // 配列を文字列に変換してURLエンコード
                     const excludeList = excludedRecommendations.join('、');
                     url += `&exclude=${encodeURIComponent(excludeList)}`;
                     console.log(`🚫 除外リスト(${excludedRecommendations.length}件): ${excludeList}`);
+                }
+                // 取得済みの天気情報を付与（API節約）
+                try {
+                    const wi = collectWeatherInfoForAPI();
+                    if (wi) {
+                        url += `&weather_info=${encodeURIComponent(JSON.stringify(wi))}`;
+                    }
+                } catch (e) {
+                    console.warn('天気情報の付与に失敗:', e);
                 }
                 console.log(`📡 統合推薦API呼び出し: ${url}`);
                 
@@ -1163,6 +1172,32 @@
                     btn.innerHTML = originalText;
                 }
             }
+        }
+
+        // ページ表示中の天気情報をAPIへ渡すために収集
+        function collectWeatherInfoForAPI() {
+            const location = document.getElementById('weatherLocation')?.textContent?.trim();
+            const temperatureText = document.getElementById('weatherTemp')?.textContent?.trim() || '';
+            const desc = document.getElementById('weatherDesc')?.textContent?.trim();
+            const feelsLikeText = document.getElementById('weatherFeelsLike')?.textContent?.trim() || '';
+            const humidityText = document.getElementById('weatherHumidity')?.textContent?.trim() || '';
+
+            const toNumber = (s, def=null) => {
+                if (!s) return def;
+                const m = s.match(/[-+]?[0-9]*\.?[0-9]+/);
+                return m ? parseFloat(m[0]) : def;
+            };
+
+            const wi = {
+                city_name: location || '現在地',
+                temperature: toNumber(temperatureText, null),
+                feels_like: toNumber(feelsLikeText, null),
+                humidity: toNumber(humidityText, null),
+                weather_description: desc || '',
+            };
+            // 欠損が多すぎる場合は無視
+            const hasCore = wi.temperature !== null || wi.weather_description;
+            return hasCore ? wi : null;
         }
 
         // 直前の結果を履歴に保存（重複タイトルは追加しない）

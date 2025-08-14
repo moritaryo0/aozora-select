@@ -72,6 +72,8 @@ def create_weather_rag_prompt(weather_info, location_name="現在地", exclude_t
 
 この{weather_mood}雰囲気と{temp_mood}読書体験、そして{season_mood}季節感を考慮して、
 青空文庫の中から今この瞬間に読むのにぴったりな短編作品（1時間以内で読める）を1つ推薦してください。
+もしその日が特定のイベントの日であれば、そのイベントに関連するような作品の推薦順位を高くしてください。(例：七夕なら七夕に関連する作品、ハロウィンならハロウィンに関連する作品など)。
+
 
 {f"【重要】以下の作品は除外してください(空の場合は無視)：{exclude_text}" if exclude_text else ""}
 
@@ -85,6 +87,7 @@ def create_weather_rag_prompt(weather_info, location_name="現在地", exclude_t
 -作品名-：[作品名]
 -作者名-：[作者名]
 -文字数-：[作品の文字数]
+-推定読書時間-：[推定読書時間]
 -作品の魅力-：[作品の特徴やあらすじを簡潔に]
 
 -読書体験-：[簡単な選書理由とこの天気・時間帯でおすすめのシチュエーション(BGMなど)の提案]
@@ -95,7 +98,7 @@ def create_weather_rag_prompt(weather_info, location_name="現在地", exclude_t
     return prompt.strip()
 
 
-def get_integrated_recommendation(lat=35.681236, lon=139.767125, openweather_api_key=None, exclude_text=None):
+def get_integrated_recommendation(lat=35.681236, lon=139.767125, openweather_api_key=None, exclude_text=None, weather_info_override=None):
     """
     天気情報とRAGを統合した推薦システム
     
@@ -124,9 +127,12 @@ def get_integrated_recommendation(lat=35.681236, lon=139.767125, openweather_api
                 'type': 'integrated_weather_rag'
             }
         
-        # 天気情報を取得
+        # 天気情報を取得（フロントからの値があればそれを優先）
         weather_info = None
-        if openweather_api_key:
+        if isinstance(weather_info_override, dict) and weather_info_override:
+            print("🌤️ フロント提供の天気情報を使用します（API呼び出しをスキップ）")
+            weather_info = weather_info_override
+        elif openweather_api_key:
             print("🌤️ 天気情報を取得中...")
             weather_info = get_weather_data(lat, lon, openweather_api_key)
         
